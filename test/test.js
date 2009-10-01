@@ -4,26 +4,36 @@ Deferred.define();
 Deferred.test = function(name, t) {
     var d = new Deferred();
     setTimeout(function() {
-        Deferred.test.setup().next(function() {
-            test(name, function() {
-                try {
-                    t(d);
-                } finally {
-                    // Deferred.test.teardown();
-                }
-            });
+        var setupDeferred = new Deferred(), teardownDeferred = new Deferred();
+        var setup = Deferred.test.setup, teardown = Deferred.test.teardown;
+        setupDeferred.next(function() {
+            setTimeout(function() {
+                test(name, function() {
+                    try {
+                        t(teardownDeferred);
+                    } catch(e) {
+                        ok(false, 'test error: ' + e.toString());
+                        teardownDeferred.call();
+                    }
+                });
+            }, 0);
+            return teardownDeferred;
+        }).next(function() {
+            teardown(d);
         });
+        setup(setupDeferred);
     }, 0);
     return d;
 };
 
-Deferred.test.setup = function() {
-    return next(function() {
-        console.log('setup');
-    });
+var i = 0;
+Deferred.test.setup = function(d) {
+    console.log('setup' + (++i));
+    d.call();
 };
 
 Deferred.test.teardown = function(d) {
+    console.log('teardown' + i);
     d.call();
 };
 
@@ -56,7 +66,6 @@ test('3', function(d) {
 test('finished', function(d) {
     ok(true, 'finished');
     d.call();
-    console.log(1);
 }).
 
 error(function(e) {
