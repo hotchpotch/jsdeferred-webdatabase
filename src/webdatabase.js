@@ -10,7 +10,7 @@
         _conenctions: {},
         global: null,
         openDatabase: function(dbName, options) {
-            if (!dbName) dbName = 'default';
+            if (!dbName) dbName = 'default-wdb';
             if (this._conenctions[dbName]) return this._conenctions[dbName];
 
             options = extend({
@@ -37,6 +37,8 @@
     };
 
     Model.classMethods = {
+        createTable: function(callback, errorback) {
+        }
     };
 
     Model.instancePrototype = {

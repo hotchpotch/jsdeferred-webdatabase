@@ -26,21 +26,35 @@ Deferred.test = function(name, t) {
     return d;
 };
 
-var i = 0;
+//var i = 0;
 Deferred.test.setup = function(d) {
-    console.log('setup' + (++i));
+//    console.log('setup' + (++i));
     d.call();
 };
 
 Deferred.test.teardown = function(d) {
-    console.log('teardown' + i);
+//    console.log('teardown' + i);
     d.call();
+};
+
+Deferred.prototype.method = function(name) {
+    return d[name]();
 };
 
 Deferred.register('test', Deferred.test);
 
 Deferred.
-test("initialize", function(d){
+test("openDatabase", function(d){
+    var db = WebDatabase.openDatabase();
+    ok(db, 'db');
+    var db1 = WebDatabase.openDatabase();
+    equals(db, db1, 'db cache');
+    var db2 = WebDatabase.openDatabase('foo');
+    ok(db, 'db2');
+    d.call();
+}).
+
+test('Model init', function(d) {
     window.User = WebDatabase.Model({
         table: 'users',
         fields: {
@@ -52,11 +66,9 @@ test("initialize", function(d){
             date      : 'TIMESTAMP NOT NULL'
         }
     });
-    d.call();
-}).
-
-test('2', function(d) {
-    d.call();
+    User.createTable(function() {
+        d.call();
+    });
 }).
 
 test('3', function(d) {
