@@ -100,8 +100,26 @@ test("executeSql", function(d) {
                   equals(result.rows.item(0).name, 'first');
                   equals(result.rows.item(1).name, 'second');
               });
-        })
-    ], [
+        }),
+        db.transaction(function(tx) {
+            tx.
+              executeSql('drop table if exists `Test`').
+              executeSql(function(result) {
+                  ok(result, 'callback with result');
+                  return 'create table if not exists Test (eid INTEGER PRIMARY KEY, name TEXT)';
+              }).
+              executeSql("insert into Test (name) values ('first')").
+              executeSql("insert into Test (name) values ('second')").
+              executeSql("insert into Test (name) values ('third')").
+              executeSql("select * from Test order by eid").
+              next(function(result) {
+                  equals(result.rows.length, 3);
+                  equals(result.rows.item(0).name, 'first');
+                  equals(result.rows.item(0).eid , 1);
+                  equals(result.rows.item(2).name, 'third');
+                  equals(result.rows.item(2).eid , 3);
+              });
+        }),
         db.transaction(function(tx) {
             tx.
               executeSql('drop table if exists `Test`').
@@ -123,7 +141,7 @@ test("executeSql", function(d) {
     ]).next(function() {
         d.call();
     });
-}, 9).
+}, 15).
 
 test('Model init', function(d) {
     window.User = Model({
