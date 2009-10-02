@@ -55,61 +55,49 @@
         return this;
     }
 
+            var ti = 0;
     Transaction.prototype = {
         _execute: function() {
             var d = new $D;
-            while (this.shiftDefererd(d)) {};
-            d.call();
-                // var d = new $D;
-                // var que;
-                // while((que = this.queue.shift())) {
-                //     if (que[0] == 'deferred') {
-                //         return d.apply(d, que[1]);
-                //     } else if (que[0] == 'sql') {
-                //         tx.executeSql(que[1], que[2], function(res, _tx) {
-                //             tx = _tx;
-                //             d.call(res)
-                //         }, function(e) {
-                //             d.fail(e)
-                //         });
-                //     }
-                // }
-                // return d;
+            this.shiftDefererd(d);
         },
         shiftDefererd: function(d) {
-            if (this.queue.length) {
-                var self = this;
-                var que = this.queue.shift(); // , d = new $D;
-                if (que[0] == 'deferred') {
-                    return d.apply(d, que[1]);
-                } else if (que[0] == 'sql') {
-                    var sql = que[1], args = que[2];
-                    if (typeof sql == 'function') {
-                        if (!self._lastResult) {
-                            throw new Error('no last result');
-                        } else {
-                            sql = sql(self._lastResult);
-                            if (sql instanceof Array) {
-                                sql = sql[0], args = sql[1];
-                            } else {
-                                sql = tmp;
-                            }
+            if (this.queue.length == 0) return;
+
+            var self = this;
+            var que = this.queue.shift(); // , d = new $D;
+            if (que[0] == 'deferred') {
+                return d.apply(d, que[1]);
+            } else if (que[0] == 'sql') {
+                // var d2 = new $D;
+                console.log(ti++);
+                var sql = que[1], args = que[2];
+                if (typeof sql == 'function') {
+                    if (!self._lastResult) {
+                        throw new Error('no last result');
+                    } else {
+                        sql = sql(self._lastResult);
+                        if (sql instanceof Array) {
+                            sql = sql[0], args = sql[1];
                         }
                     }
-                    self.tx.executeSql(sql, args, function(_tx, res) {
-                        p('callbk');
-                        self.tx = _tx;
-                        self._lastResult = res;
-                        d.call(res);
-                    }, function(_tx, error) {
-                        p('e', tx, error);
-                        self.tx = _tx;
-                        self.lastError = error;
-                        d.fail(error);
-                    });
                 }
+                self.tx.executeSql(sql, args, function(_tx, res) {
+                console.log(ti++);
+                    self.tx = _tx;
+                    self._lastResult = res;
+                    d.call(res);
+                    self.shiftDefererd(d);
+                }, function(_tx, error) {
+                    p('SQL ERROR: ', error, sql, args);
+                    self.tx = _tx;
+                    self.lastError = error;
+                    d.fail(error);
+                    self.shiftDefererd(d);
+                });
                 return d;
             }
+            return;
         },
         /*
          * tx.executeSql('SELECT * from users').next(result) {
@@ -128,7 +116,7 @@
     (function() {
         // for (var name in JSDeferred.prototype) {
         for (var name in ['cancel', 'call', 'fail', 'error']) {
-            var method = JSDeferred.prototype[name];
+            var method = Deferred.prototype[name];
             if (typeof method == 'function' && Transaction.prototype[name] == 'undefined') {
                 Transaction.prototype[name] = function() {
                     this.queue.push(['deferred', Array.prototype.slice.call(arguments, 0)]);

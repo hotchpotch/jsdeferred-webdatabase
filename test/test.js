@@ -86,7 +86,7 @@ test("executeSql", function(d) {
     var db = new Database;
     db.transaction(function(tx) {
         tx.
-          executeSql('drop table if not exists Test').
+          executeSql('drop table if exists `Test`').
           executeSql(function(result) {
               ok(result, 'callback with result');
               return 'create table if not exists Test (name text UNIQUE)';
