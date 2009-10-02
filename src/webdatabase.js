@@ -20,14 +20,14 @@
 
         if (Database._instances[dbName]) return Database._instances[dbName];
 
-        options = extend({
+        this.options = extend({
             version: '1.0',
             displayName: dbName,
-            estimatedSize: 10 * 1024 * 1024
+            estimatedSize: 1 * 1024 * 1024
         }, options);
 
         this.dbName = dbName;
-        this.db = (this.global || window).openDatabase(dbName, options.version, options.displayName, options.estimatedSize);
+        this.db = this.getDatabase();
         Database._instances[dbName] = this;
         return this;
     }
@@ -46,6 +46,10 @@
                 t.commit().call();
             }, function(e) { d.fail(e); }, function(e) { d.call(e); });
             return d;
+        },
+        getDatabase: function() {
+            var options = this.options;
+            return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
         }
     }
 
