@@ -43,7 +43,7 @@
             db.transaction(function(tx) {
                 var t = new Transaction(tx);
                 callback(t);
-                t._execute().call();
+                t.commit().call();
             }, function(e) { d.fail(e); }, function(e) { d.call(e); });
             return d;
         }
@@ -56,7 +56,7 @@
     }
 
     Transaction.prototype = {
-        _execute: function() {
+        commit: function() {
             var d = new $D;
             this.shiftDefererd(d);
             return d;
@@ -67,7 +67,6 @@
             var self = this;
             var que = this.queue.shift(); // , d = new $D;
             if (que[0] == 'deferred') {
-                console.log('reg');
                 return d[que[1]].apply(d, que[2]);
             } else if (que[0] == 'sql') {
                 var sql = que[1], args = que[2];
@@ -111,15 +110,14 @@
     };
 
     (function() {
-        // for (var name in JSDeferred.prototype) {
-        ['next', 'cancel', 'call', 'fail', 'error'].forEach(function(name) {
+        for (var name in Deferred.prototype) {
             var method = Deferred.prototype[name];
             if (typeof method == 'function' && typeof Transaction.prototype[name] == 'undefined') {
                 Transaction.prototype[name] = function() {
                     this.queue.push(['deferred', name, Array.prototype.slice.call(arguments, 0)]);
                 }
             }
-        });
+        }
     })();
 
     Model = Database.Model = function(schema) {
