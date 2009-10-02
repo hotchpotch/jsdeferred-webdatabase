@@ -47,7 +47,8 @@ Deferred.prototype.method = function(name) {
 
 Deferred.register('test', Deferred.test);
 
-var Database = WebDatabase, Model = WebDatabase.Model;
+var Database = Deferred.WebDatabase;
+var Model = Database.Model, SQL = Database.SQL;
 
 Deferred.
 test("Database instance", function(d){
@@ -59,6 +60,21 @@ test("Database instance", function(d){
     ok(db2, 'db2');
     ok(db != db2, 'db not eq');
     ok(db.db != db2.db, 'db not eq raw db');
+    d.call();
+}, 5).
+
+test('SQL', function(d) {
+    var whereOK = function(stmt, bind, obj) {
+        var wRes = SQL.where(obj);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+    }
+    whereOK('WHERE user = ? AND status = ?', ['nwiger', 'completed'], {
+        user: 'nwiger',
+        status: 'completed',
+    });
+    var sql = new SQL('mytable');
+    ok(sql instanceof SQL, 'SQL instance');
     d.call();
 }).
 

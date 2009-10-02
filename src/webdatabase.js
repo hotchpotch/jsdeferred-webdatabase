@@ -16,7 +16,7 @@
         return to;
     }
 
-    Database = window.WebDatabase = function(dbName, options) {
+    Database = Deferred.WebDatabase = function(dbName, options) {
         if (!dbName) dbName = 'default-wdb';
 
         if (Database._instances[dbName]) return Database._instances[dbName];
@@ -156,6 +156,48 @@
             }
         });
     })();
+
+    SQL = Database.SQL = function(table) {
+        this.table = table;
+        return this;
+    }
+
+    extend(SQL, {
+        where: function(obj) {
+            if (false) {// XXX:impl
+                // string
+                return [obj, null];
+            } else if (obj instanceof Array) {
+                // XXX: impl
+            } else {
+                return SQL.whereHash(obj);
+            }
+        },
+        whereHash: function(hash) {
+            var stmt = [], bind = [];
+            for (var key in hash) {
+                var val = hash[key];
+                if (val instanceof Array) {
+                    bind.concat(val);
+                    var len = val.length;
+                    var tmp = [];
+                    while (len--)
+                        tmp.push(SQL.holder(key));
+                    stmt.push('(' + tmp.join(' OR ') + ')');
+                } else {
+                    bind.push(val);
+                    stmt.push(SQL.holder(key));
+                }
+            }
+            return ['WHERE ' + stmt.join(' AND '), bind];
+        },
+        holder: function(key) {
+            return '' + key + ' = ?';
+        }
+    });
+
+    SQL.prototype = {
+    }
 
     Model = Database.Model = function(schema) {
         var klass = function() {
