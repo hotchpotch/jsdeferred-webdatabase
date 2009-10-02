@@ -90,11 +90,10 @@
                     self.shiftDefererd(d);
                     d.call(res);
                 }, function(_tx, error) {
-                    p('SQL ERROR: ', error, sql, args);
                     self.tx = _tx;
                     self.lastError = error;
                     self.shiftDefererd(d);
-                    d.fail(error);
+                    d.fail([error, sql, args]);
                 });
                 return d;
             }

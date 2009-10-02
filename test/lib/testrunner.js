@@ -429,6 +429,7 @@ function test(name, callback, testCount) {
 		for ( var i = 0; i < config.assertions.length; i++ ) {
 			var assertion = config.assertions[i];
 			$("<li/>").addClass(assertion.result ? "pass" : "fail").text(assertion.message || "(no message)").appendTo(ol);
+        window.scrollTo(0, document.body.scrollHeight);
 			assertion.result ? good++ : bad++;
 		}
 		config.stats.bad += bad;
@@ -451,6 +452,7 @@ function test(name, callback, testCount) {
 			$("#filter-pass").attr("disabled", null);
 			$("#filter-missing").attr("disabled", null);
 		}
+        window.scrollTo(0, document.body.scrollHeight);
 	});
 }
 
