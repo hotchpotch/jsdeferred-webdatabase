@@ -109,18 +109,20 @@ test("executeSql", function(d) {
                   return 'create table if not exists Test (id INT UNIQUE, name TEXT UNIQUE)';
               }).
               executeSql("insert into Test values (1, 'first')").
+              executeSql("insert into Test values (?, ?)", [3,"third"]).
               executeSql("insert into Test values (?, ?)", [2,"second"]).
               executeSql("select * from Test order by id").
               next(function(result) {
-                  equals(result.rows.length, 2);
+                  equals(result.rows.length, 3);
                   equals(result.rows.item(0).name, 'first');
                   equals(result.rows.item(1).name, 'second');
+                  equals(result.rows.item(2).name, 'third');
               });
         })
     ]).next(function() {
         d.call();
     });
-}, 8).
+}, 9).
 
 test('Model init', function(d) {
     window.User = Model({
