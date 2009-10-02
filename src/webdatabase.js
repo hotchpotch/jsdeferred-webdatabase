@@ -43,7 +43,7 @@
             db.transaction(function(tx) {
                 var t = new Transaction(tx);
                 callback(t);
-                t._execute();
+                t._execute().call();
             }, function(e) { d.fail(e); }, function(e) { d.call(e); });
             return d;
         }
@@ -55,11 +55,11 @@
         return this;
     }
 
-            var ti = 0;
     Transaction.prototype = {
         _execute: function() {
             var d = new $D;
             this.shiftDefererd(d);
+            return d;
         },
         shiftDefererd: function(d) {
             if (this.queue.length == 0) return;
@@ -67,10 +67,9 @@
             var self = this;
             var que = this.queue.shift(); // , d = new $D;
             if (que[0] == 'deferred') {
-                return d.apply(d, que[1]);
+                console.log('reg');
+                return d[que[1]].apply(d, que[2]);
             } else if (que[0] == 'sql') {
-                // var d2 = new $D;
-                console.log(ti++);
                 var sql = que[1], args = que[2];
                 if (typeof sql == 'function') {
                     if (!self._lastResult) {
@@ -83,21 +82,19 @@
                     }
                 }
                 self.tx.executeSql(sql, args, function(_tx, res) {
-                console.log(ti++);
                     self.tx = _tx;
                     self._lastResult = res;
-                    d.call(res);
                     self.shiftDefererd(d);
+                    d.call(res);
                 }, function(_tx, error) {
                     p('SQL ERROR: ', error, sql, args);
                     self.tx = _tx;
                     self.lastError = error;
-                    d.fail(error);
                     self.shiftDefererd(d);
+                    d.fail(error);
                 });
                 return d;
             }
-            return;
         },
         /*
          * tx.executeSql('SELECT * from users').next(result) {
@@ -115,14 +112,14 @@
 
     (function() {
         // for (var name in JSDeferred.prototype) {
-        for (var name in ['cancel', 'call', 'fail', 'error']) {
+        ['next', 'cancel', 'call', 'fail', 'error'].forEach(function(name) {
             var method = Deferred.prototype[name];
-            if (typeof method == 'function' && Transaction.prototype[name] == 'undefined') {
+            if (typeof method == 'function' && typeof Transaction.prototype[name] == 'undefined') {
                 Transaction.prototype[name] = function() {
-                    this.queue.push(['deferred', Array.prototype.slice.call(arguments, 0)]);
+                    this.queue.push(['deferred', name, Array.prototype.slice.call(arguments, 0)]);
                 }
             }
-        }
+        });
     })();
 
     Model = Database.Model = function(schema) {
