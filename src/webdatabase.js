@@ -91,7 +91,7 @@
                     d.call(res);
                 }, function(_tx, error) {
                     self.tx = _tx;
-                    self.lastError = error;
+                    self.lastError = [error, sql, args];
                     self.shiftDefererd(d);
                     d.fail([error, sql, args]);
                 });

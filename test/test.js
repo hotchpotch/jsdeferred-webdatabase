@@ -121,6 +121,16 @@ test("executeSql", function(d) {
               });
         }),
         db.transaction(function(tx) {
+            var eSql = 'create table `Test`';
+            tx.
+              executeSql('create table if not exists `Test`').
+              executeSql(eSql).
+              error(function(e) {
+                  ok(e[0], 'get transaction errorback');
+                  equals(e[1], eSql);
+              });
+        }),
+        db.transaction(function(tx) {
             tx.
               executeSql('drop table if exists `Test`').
               executeSql(function(result) {
@@ -141,7 +151,7 @@ test("executeSql", function(d) {
     ]).next(function() {
         d.call();
     });
-}, 15).
+}, 17).
 
 test('Model init', function(d) {
     window.User = Model({
