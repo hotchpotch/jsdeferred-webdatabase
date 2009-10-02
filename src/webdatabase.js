@@ -157,18 +157,40 @@
         });
     })();
 
+    // SQL queryclass like SQL::Abstract.
     SQL = Database.SQL = function(table) {
         this.table = table;
         return this;
     }
 
     extend(SQL, {
+        isString: function(obj) {
+            return typeof obj === 'string' || obj instanceof String;
+        },
         where: function(obj) {
-            if (false) {// XXX:impl
-                // string
+            if (SQL.isString(obj)) {
                 return [obj, null];
             } else if (obj instanceof Array) {
-                // XXX: impl
+                if (obj[1] instanceof Array) {
+                    return ['WHERE ' + obj[0], obj[1]];
+                } else if (SQL.isString(obj[1])) {
+                    return ['WHERE ' + obj[0], obj.slice(1)];
+                } else {
+                    var stmt = obj[0];
+                    var hash = obj[1];
+                    var re = /:(\w(:?[\w_]+)?)/g;
+                    var bind = [];
+                    stmt = stmt.replace(re, function(m) {
+                        var key = RegExp.$1;
+                        if (hash[key]) {
+                            bind.push(hash[key]);
+                        } else {
+                            throw new Error('name not found: ' + key);
+                        }
+                        return '?';
+                    });
+                    return ['WHERE ' + stmt, bind];
+                }
             } else {
                 return SQL.whereHash(obj);
             }

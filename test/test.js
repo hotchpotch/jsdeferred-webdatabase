@@ -64,17 +64,42 @@ test("Database instance", function(d){
 }, 5).
 
 test('SQL', function(d) {
+    ok(SQL.isString('a'), 'str');
+    ok(SQL.isString(new String('a')), 'str');
+    ok(!SQL.isString({}), 'str');
+    ok(!SQL.isString([]), 'str');
     var whereOK = function(stmt, bind, obj) {
         var wRes = SQL.where(obj);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
     }
-    whereOK('WHERE user = ? AND status = ?', ['nwiger', 'completed'], {
-        user: 'nwiger',
+    var sTmp = "WHERE user = 'nadeko' AND status = 'completed'";
+    whereOK(sTmp, null, sTmp);
+
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = ? AND status = ?', ['nadeko', 'completed']]);
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = ? AND status = ?', 'nadeko', 'completed']);
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = :user AND status = :status', {
+        user: 'nadeko',
+        status: 'completed',
+    }]);
+
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = :u AND status = :s_atus', {
+        u: 'nadeko',
+        s_atus: 'completed',
+    }]);
+
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = :user AND status = :status', {
+        user: 'nadeko',
+        status: 'completed',
+    }]);
+
+    whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], {
+        user: 'nadeko',
         status: 'completed',
     });
-    whereOK('WHERE user = ? AND (status = ? OR status = ? OR status = ?)', ['nwiger', 'assigned', 'in-progress', 'pending'], {
-        user: 'nwiger',
+
+    whereOK('WHERE user = ? AND (status = ? OR status = ? OR status = ?)', ['nadeko', 'assigned', 'in-progress', 'pending'], {
+        user: 'nadeko',
         status: ['assigned', 'in-progress', 'pending']
 
     });
