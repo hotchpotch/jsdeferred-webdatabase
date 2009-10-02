@@ -60,21 +60,37 @@ test("Database instance", function(d){
     d.call();
 }).
 
-test("transaction", function(d){
+test("transaction", function(d) {
     var db = new Database;
     db.transaction(function(sql) {
-        // ok(true, 'transaction');
-        // sql.
-        // execute('drop table if not exists Test').
-        // execute(function(result) {
-        //     ok(true, 'result callback');
-        //     return 'create table if not exists Test (name text UNIQUE)';
-        // });
+        ok(true, 'transaction');
     }).next(function() {
         ok(true, 'finish transaction');
-        d.call();
     }).error(function() {
         ok(null, 'error transaction');
+    }).next(function() {
+        db.transaction(function(sql) {
+            noMethodError();
+        }).next(function() {
+            ok(null, 'error: finish transaction');
+        }).error(function(e) {
+            ok(e.toString(), 'success: error transaction');
+            d.call();
+        });
+    });
+}).
+
+test("SQL", function(d) {
+    var db = new Database;
+    db.transaction(function(sql) {
+        sql.
+        execute('drop table if not exists Test').
+        execute(function(result) {
+            ok(true, 'result callback');
+            return 'create table if not exists Test (name text UNIQUE)';
+        });
+    }).next(function() {
+        d.call();
     });
 }).
 
