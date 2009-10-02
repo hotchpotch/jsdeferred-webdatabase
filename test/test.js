@@ -147,11 +147,16 @@ test("executeSql", function(d) {
                   equals(result.rows.item(1).name, 'second');
                   equals(result.rows.item(2).name, 'third');
               });
+        }),
+        db.executeSql(
+            'drop table if exists `Test3`'
+        ).next(function(res) {
+            ok(res, 'no transaction executeSql');
         })
     ]).next(function() {
         d.call();
     });
-}, 17).
+}, 18).
 
 test('Model init', function(d) {
     window.User = Model({

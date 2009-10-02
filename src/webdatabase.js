@@ -3,6 +3,7 @@
     Deferred.define(this);
 
     var $D = Deferred;
+    var $F = function() {};
     var Database, Transaction, SQL, Model;
 
     var p = function() {
@@ -50,6 +51,20 @@
         getDatabase: function() {
             var options = this.options;
             return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
+        },
+        executeSql: function(sql, args) {
+            var self = this;
+            return next(function() {
+                var d = new $D;
+                self.transaction(function(tx) {
+                    tx.executeSql(sql, args).next(function(res) {
+                        d.call(res);
+                    }, function(error) {
+                        d.fail(error);
+                    });
+                });
+                return d;
+            });
         }
     }
 
