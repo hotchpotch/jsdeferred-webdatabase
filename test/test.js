@@ -29,15 +29,15 @@ Deferred.test = function(name, t, count, wait) {
     return d;
 };
 
-var i = 0;
+// var i = 0;
 Deferred.test.setup = function(d) {
-    console.log('setup' + (++i));
+//    console.log('setup' + (++i));
     d.call();
 };
 
 Deferred.test.teardown = function(d) {
     start(); // XXX
-    console.log('teardown' + i);
+//    console.log('teardown' + i);
     d.call();
 };
 
@@ -68,6 +68,15 @@ test('SQL', function(d) {
     ok(SQL.isString(new String('a')), 'str');
     ok(!SQL.isString({}), 'str');
     ok(!SQL.isString([]), 'str');
+
+    var holderOK = function(stmt, bind, key, obj) {
+        var wRes = SQL.holder(key, obj);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+    }
+    holderOK('status != ?', ['completed'], 'status', {'!=': 'completed'});
+    holderOK('(date < ?) OR (date > ?)', [10, 100], 'date', {'<': '10', '>': 100});
+
     var whereOK = function(stmt, bind, obj) {
         var wRes = SQL.where(obj);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
@@ -101,10 +110,8 @@ test('SQL', function(d) {
     whereOK('WHERE user = ? AND (status = ? OR status = ? OR status = ?)', ['nadeko', 'assigned', 'in-progress', 'pending'], {
         user: 'nadeko',
         status: ['assigned', 'in-progress', 'pending']
-
     });
 
-    var obj = {'!=': 'completed'};
     whereOK('WHERE user = ? AND status != ?', ['nwiger', 'completed'], {
         user: 'nwiger',
         status: {'!=': 'completed'}

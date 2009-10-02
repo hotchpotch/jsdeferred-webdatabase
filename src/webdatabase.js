@@ -203,18 +203,39 @@
                     bind = bind.concat(val);
                     var len = val.length;
                     var tmp = [];
-                    while (len--)
-                        tmp.push(SQL.holder(key));
+                    while (len--) {
+                        tmp.push(SQL.holder(key)[0]);
+                    }
                     stmt.push('(' + tmp.join(' OR ') + ')');
-                } else {
+                } else if (SQL.isString(val)) {
                     bind.push(val);
-                    stmt.push(SQL.holder(key));
+                    stmt.push(SQL.holder(key)[0]);
+                } else {
+                    SQL.holder();
                 }
             }
             return ['WHERE ' + stmt.join(' AND '), bind];
         },
-        holder: function(key) {
-            return '' + key + ' = ?';
+        holder: function(key, hash) {
+            var stmt, bind;
+            if (typeof hash == 'undefined') {
+                stmt = key + ' = ?';
+            } else if (SQL.isString(hash)) {
+            } else if (hash instanceof Array) {
+            } else {
+                var st = [], bind = [];
+                for (var cmp in hash) {
+                    st.push(cmp);
+                    bind.push(hash[cmp]);
+                }
+                if (st.length > 1) {
+                    stmt = st.map(function(e) { return '(' + key + ' ' + e + ' ?)' }).join(' OR ');
+                } else {
+                    stmt = '' + key + ' ' + st[0] + ' ?';
+                }
+                p(stmt, bind);
+            }
+            return [stmt, bind];
         }
     });
 
