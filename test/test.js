@@ -103,6 +103,13 @@ test('SQL', function(d) {
         status: ['assigned', 'in-progress', 'pending']
 
     });
+
+    var obj = {'!=': 'completed'};
+    whereOK('WHERE user = ? AND status != ?', ['nwiger', 'completed'], {
+        user: 'nwiger',
+        status: {'!=': 'completed'}
+    });
+
     var sql = new SQL('mytable');
     ok(sql instanceof SQL, 'SQL instance');
     d.call();
