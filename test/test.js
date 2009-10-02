@@ -153,13 +153,24 @@ test("executeSql", function(d) {
         ).next(function(res) {
             ok(res, 'no transaction executeSql');
         }).next(function() {
-            // db.executeSql('create table if not exists Test (id INT UNIQUE, name TEXT UNIQUE)').next(function() {
-            // })
+            var d = new Deferred();
+            db.executeSql([
+                'create table if not exists Test3 (id INT UNIQUE, name TEXT UNIQUE)',
+                "insert into Test3 values (3, 'third')",
+                ["insert into Test3 values (?, ?)", [2, 'second']],
+                ["select * from Test3 where id = ?", [3]]
+            ]).next(function(res) {
+                ok(res, 'no transaction executeSql(ary)');
+                equals(res.rows.length, 1);
+                equals(res.rows.item(0).name, 'third');
+                d.call();
+            });
+            return d;
         })
     ]).next(function() {
         d.call();
     });
-}, 18).
+}, 21).
 
 test('Model init', function(d) {
     window.User = Model({

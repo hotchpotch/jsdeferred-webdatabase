@@ -61,8 +61,14 @@
                 }
                 var nRes, nError;
                 self.transaction(function(tx) {
+                    var str, arg;
                     for (var i = 0, len = sql.length; i < len; i++) {
-                        tx.executeSql(sql[i][0], sql[i][1]); // <- tx.executeSql(sql, args);
+                        if (sql[i] instanceof Array) {
+                            str = sql[i][0], arg = sql[i][1];
+                        } else {
+                            str = sql[i], arg = null;
+                        }
+                        tx.executeSql(str, arg);
                     }
                     tx.next(function(res) {
                         nRes = res;
