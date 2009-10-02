@@ -178,7 +178,7 @@
             for (var key in hash) {
                 var val = hash[key];
                 if (val instanceof Array) {
-                    bind.concat(val);
+                    bind = bind.concat(val);
                     var len = val.length;
                     var tmp = [];
                     while (len--)

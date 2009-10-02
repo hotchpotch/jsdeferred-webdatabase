@@ -73,6 +73,11 @@ test('SQL', function(d) {
         user: 'nwiger',
         status: 'completed',
     });
+    whereOK('WHERE user = ? AND (status = ? OR status = ? OR status = ?)', ['nwiger', 'assigned', 'in-progress', 'pending'], {
+        user: 'nwiger',
+        status: ['assigned', 'in-progress', 'pending']
+
+    });
     var sql = new SQL('mytable');
     ok(sql instanceof SQL, 'SQL instance');
     d.call();
