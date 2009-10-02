@@ -1,14 +1,14 @@
 
 Deferred.define();
 
-Deferred.test = function(name, t, wait) {
+Deferred.test = function(name, t, count, wait) {
     var d = new Deferred();
     setTimeout(function() {
         var setupDeferred = new Deferred(), teardownDeferred = new Deferred();
         var setup = Deferred.test.setup, teardown = Deferred.test.teardown;
         setupDeferred.next(function() {
             next(function() {
-                test(name, function() {
+                var args = [name, function() {
                     stop((wait || 3000));
                     try {
                         t(teardownDeferred);
@@ -18,7 +18,9 @@ Deferred.test = function(name, t, wait) {
                         start();
                         teardownDeferred.call();
                     }
-                });
+                }];
+                if (count) args.push(count)
+                test.apply(test, args);
             });//, 0);
             return teardownDeferred;
         }).next(function() {
@@ -78,7 +80,7 @@ test("transaction", function(d) {
             d.call();
         });
     });
-}).
+}, 3).
 
 test("executeSql", function(d) {
     var db = new Database;
@@ -92,7 +94,7 @@ test("executeSql", function(d) {
     }).next(function() {
         d.call();
     });
-}).
+}, 1).
 
 test('Model init', function(d) {
     window.User = Model({

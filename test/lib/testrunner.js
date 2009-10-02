@@ -360,7 +360,7 @@ function diff( clean, dirty ){
 	});
 }
 
-function test(name, callback) {
+function test(name, callback, testCount) {
 	if(config.currentModule)
 		name = config.currentModule + " module: " + name;
 	var lifecycle = $.extend({
@@ -419,6 +419,10 @@ function test(name, callback) {
 			QUnit.ok( false, "Expected " + config.expected + " assertions, but " + config.assertions.length + " were run" );
 		}
 		
+        if (typeof testCount != 'undefined' && parseInt(testCount) != config.assertions.length) {
+            QUnit.ok( false, "Expected " + testCount + " assertions, but " + config.assertions.length + " were run(testCounts)" );
+		}
+
 		var good = 0, bad = 0;
 		var ol  = $("<ol/>").hide();
 		config.stats.all += config.assertions.length;
