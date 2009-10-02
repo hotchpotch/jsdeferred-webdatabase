@@ -152,6 +152,9 @@ test("executeSql", function(d) {
             'drop table if exists `Test3`'
         ).next(function(res) {
             ok(res, 'no transaction executeSql');
+        }).next(function() {
+            // db.executeSql('create table if not exists Test (id INT UNIQUE, name TEXT UNIQUE)').next(function() {
+            // })
         })
     ]).next(function() {
         d.call();

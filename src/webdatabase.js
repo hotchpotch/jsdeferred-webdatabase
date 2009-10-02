@@ -56,12 +56,24 @@
             var self = this;
             return next(function() {
                 var d = new $D;
+                if (!(sql instanceof Array)) {
+                    sql = [[sql, args]];
+                }
+                var nRes, nError;
                 self.transaction(function(tx) {
-                    tx.executeSql(sql, args).next(function(res) {
-                        d.call(res);
-                    }, function(error) {
-                        d.fail(error);
+                    for (var i = 0, len = sql.length; i < len; i++) {
+                        tx.executeSql(sql[i][0], sql[i][1]); // <- tx.executeSql(sql, args);
+                    }
+                    tx.next(function(res) {
+                        nRes = res;
                     });
+                    tx.error(function(res) {
+                        nError = res;
+                    });
+                }).next(function() {
+                    d.call(nRes);
+                }).error(function(e) {
+                    d.fail(e || nError);
                 });
                 return d;
             });
@@ -77,14 +89,14 @@
     Transaction.prototype = {
         commit: function() {
             var d = new $D;
-            this.shiftDefererd(d);
+            this.chains(d);
             return d;
         },
-        shiftDefererd: function(d) {
+        chains: function(d) {
             if (this.queue.length == 0) return;
 
             var self = this;
-            var que = this.queue.shift(); // , d = new $D;
+            var que = this.queue.shift();
             if (que[0] == 'deferred') {
                 return d[que[1]].apply(d, que[2]);
             } else if (que[0] == 'sql') {
@@ -102,12 +114,12 @@
                 self.tx.executeSql(sql, args, function(_tx, res) {
                     self.tx = _tx;
                     self._lastResult = res;
-                    self.shiftDefererd(d);
+                    self.chains(d);
                     d.call(res);
                 }, function(_tx, error) {
                     self.tx = _tx;
                     self.lastError = [error, sql, args];
-                    self.shiftDefererd(d);
+                    self.chains(d);
                     d.fail([error, sql, args]);
                 });
                 return d;
