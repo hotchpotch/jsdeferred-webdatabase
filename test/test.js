@@ -58,6 +58,7 @@ test("Database instance", function(d){
     var db2 = new Database('foo');
     ok(db2, 'db2');
     ok(db != db2, 'db not eq');
+    ok(db.db != db2.db, 'db not eq raw db');
     d.call();
 }).
 
