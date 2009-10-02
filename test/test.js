@@ -80,15 +80,15 @@ test("transaction", function(d) {
     });
 }).
 
-test("SQL", function(d) {
+test("executeSql", function(d) {
     var db = new Database;
-    db.transaction(function(sql) {
-        sql.
-        execute('drop table if not exists Test').
-        execute(function(result) {
-            ok(true, 'result callback');
-            return 'create table if not exists Test (name text UNIQUE)';
-        });
+    db.transaction(function(tx) {
+        tx.
+          executeSql('drop table if not exists Test').
+          executeSql(function(result) {
+              ok(true, 'result callback');
+              return 'create table if not exists Test (name text UNIQUE)';
+          });
     }).next(function() {
         d.call();
     });
