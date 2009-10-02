@@ -211,7 +211,9 @@
                     bind.push(val);
                     stmt.push(SQL.holder(key)[0]);
                 } else {
-                    SQL.holder();
+                    var r = SQL.holder(key, val);
+                    bind = bind.concat(r[1]);
+                    stmt.push(r[0]);
                 }
             }
             return ['WHERE ' + stmt.join(' AND '), bind];
@@ -233,7 +235,6 @@
                 } else {
                     stmt = '' + key + ' ' + st[0] + ' ?';
                 }
-                p(stmt, bind);
             }
             return [stmt, bind];
         }

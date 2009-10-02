@@ -64,10 +64,10 @@ test("Database instance", function(d){
 }, 5).
 
 test('SQL', function(d) {
-    ok(SQL.isString('a'), 'str');
-    ok(SQL.isString(new String('a')), 'str');
-    ok(!SQL.isString({}), 'str');
-    ok(!SQL.isString([]), 'str');
+    ok(SQL.isString('a'), 'isString');
+    ok(SQL.isString(new String('a')), 'isString');
+    ok(!SQL.isString({}), 'isString');
+    ok(!SQL.isString([]), 'isString');
 
     var holderOK = function(stmt, bind, key, obj) {
         var wRes = SQL.holder(key, obj);
@@ -112,15 +112,15 @@ test('SQL', function(d) {
         status: ['assigned', 'in-progress', 'pending']
     });
 
-    whereOK('WHERE user = ? AND status != ?', ['nwiger', 'completed'], {
-        user: 'nwiger',
+    whereOK('WHERE user = ? AND status != ?', ['nadeko', 'completed'], {
+        user: 'nadeko',
         status: {'!=': 'completed'}
     });
 
     var sql = new SQL('mytable');
     ok(sql instanceof SQL, 'SQL instance');
     d.call();
-}).
+}, 27).
 
 test("transaction", function(d) {
     var db = new Database;
