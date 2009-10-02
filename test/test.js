@@ -1,22 +1,25 @@
 
 Deferred.define();
 
-Deferred.test = function(name, t) {
+Deferred.test = function(name, t, wait) {
     var d = new Deferred();
     setTimeout(function() {
         var setupDeferred = new Deferred(), teardownDeferred = new Deferred();
         var setup = Deferred.test.setup, teardown = Deferred.test.teardown;
         setupDeferred.next(function() {
-            setTimeout(function() {
+            next(function() {
                 test(name, function() {
+                    stop((wait || 3000));
                     try {
                         t(teardownDeferred);
+                        start();
                     } catch(e) {
                         ok(false, 'test error: ' + e.toString());
+                        start();
                         teardownDeferred.call();
                     }
                 });
-            }, 0);
+            });//, 0);
             return teardownDeferred;
         }).next(function() {
             teardown(d);
@@ -26,14 +29,14 @@ Deferred.test = function(name, t) {
     return d;
 };
 
-//var i = 0;
+var i = 0;
 Deferred.test.setup = function(d) {
-//    console.log('setup' + (++i));
+    console.log('setup' + (++i));
     d.call();
 };
 
 Deferred.test.teardown = function(d) {
-//    console.log('teardown' + i);
+    console.log('teardown' + i);
     d.call();
 };
 
@@ -43,19 +46,40 @@ Deferred.prototype.method = function(name) {
 
 Deferred.register('test', Deferred.test);
 
+var Database = WebDatabase, Model = WebDatabase.Model;
+
 Deferred.
-test("openDatabase", function(d){
-    var db = WebDatabase.openDatabase();
+test("Database instance", function(d){
+    var db = new Database();
     ok(db, 'db');
-    var db1 = WebDatabase.openDatabase();
-    equals(db, db1, 'db cache');
-    var db2 = WebDatabase.openDatabase('foo');
-    ok(db, 'db2');
+    var db1 = new Database();
+    equals(db.db, db1.db, 'db cache');
+    var db2 = new Database('foo');
+    ok(db2, 'db2');
+    ok(db != db2, 'db2');
     d.call();
 }).
 
+test("transaction", function(d){
+    var db = new Database;
+    db.transaction(function(sql) {
+        // ok(true, 'transaction');
+        // sql.
+        // execute('drop table if not exists Test').
+        // execute(function(result) {
+        //     ok(true, 'result callback');
+        //     return 'create table if not exists Test (name text UNIQUE)';
+        // });
+    }).next(function() {
+        ok(true, 'finish transaction');
+        d.call();
+    }).error(function() {
+        ok(null, 'error transaction');
+    });
+}).
+
 test('Model init', function(d) {
-    window.User = WebDatabase.Model({
+    window.User = Model({
         table: 'users',
         fields: {
             'id'      : 'INTEGER PRIMARY KEY',
@@ -67,12 +91,13 @@ test('Model init', function(d) {
         }
     });
     User.createTable(function() {
+        ok(true, 'createTable');
         d.call();
     });
 }).
 
 test('3', function(d) {
-    d.call();
+    // d.call();
 }).
 
 test('finished', function(d) {
