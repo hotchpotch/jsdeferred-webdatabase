@@ -5,6 +5,10 @@
     var $D = Deferred;
     var Database, Transaction, SQL, Model;
 
+    var p = function() {
+        console.log(Array.prototype.slice.call(arguments, 0));
+    }
+
     var extend = function(to, from) {
         if (!from) return to;
         for (var key in from) to[key] = from[key];
@@ -53,7 +57,68 @@
 
     Transaction.prototype = {
         _execute: function() {
+            var d = new $D;
+            while (this.shiftDefererd(d)) {};
+            d.call();
+                // var d = new $D;
+                // var que;
+                // while((que = this.queue.shift())) {
+                //     if (que[0] == 'deferred') {
+                //         return d.apply(d, que[1]);
+                //     } else if (que[0] == 'sql') {
+                //         tx.executeSql(que[1], que[2], function(res, _tx) {
+                //             tx = _tx;
+                //             d.call(res)
+                //         }, function(e) {
+                //             d.fail(e)
+                //         });
+                //     }
+                // }
+                // return d;
         },
+        shiftDefererd: function(d) {
+            if (this.queue.length) {
+                var self = this;
+                var que = this.queue.shift(); // , d = new $D;
+                if (que[0] == 'deferred') {
+                    return d.apply(d, que[1]);
+                } else if (que[0] == 'sql') {
+                    var sql = que[1], args = que[2];
+                    if (typeof sql == 'function') {
+                        if (!self._lastResult) {
+                            throw new Error('no last result');
+                        } else {
+                            sql = sql(self._lastResult);
+                            if (sql instanceof Array) {
+                                sql = sql[0], args = sql[1];
+                            } else {
+                                sql = tmp;
+                            }
+                        }
+                    }
+                    self.tx.executeSql(sql, args, function(_tx, res) {
+                        p('callbk');
+                        self.tx = _tx;
+                        self._lastResult = res;
+                        d.call(res);
+                    }, function(_tx, error) {
+                        p('e', tx, error);
+                        self.tx = _tx;
+                        self.lastError = error;
+                        d.fail(error);
+                    });
+                }
+                return d;
+            }
+        },
+        /*
+         * tx.executeSql('SELECT * from users').next(result) {
+         * };
+         * tx.executeSql('SELECT * from users').executeSql(function(result) {
+         *     var name = result.rows.item(0).name;
+         *     return ['SELECT * from users where name = ?', name];
+         * });
+         */
         executeSql: function(sql, args) {
             this.queue.push(['sql', sql, args]);
             return this;

@@ -58,7 +58,7 @@ test("Database instance", function(d){
     equals(db.db, db1.db, 'db cache');
     var db2 = new Database('foo');
     ok(db2, 'db2');
-    ok(db != db2, 'db2');
+    ok(db != db2, 'db not eq');
     d.call();
 }).
 
@@ -88,7 +88,7 @@ test("executeSql", function(d) {
         tx.
           executeSql('drop table if not exists Test').
           executeSql(function(result) {
-              ok(true, 'result callback');
+              ok(result, 'callback with result');
               return 'create table if not exists Test (name text UNIQUE)';
           });
     }).next(function() {
