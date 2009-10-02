@@ -110,14 +110,15 @@
     };
 
     (function() {
-        for (var name in Deferred.prototype) {
+        // for (var name in JSDeferred.prototype) {
+        ['next', 'cancel', 'call', 'fail', 'error'].forEach(function(name) {
             var method = Deferred.prototype[name];
             if (typeof method == 'function' && typeof Transaction.prototype[name] == 'undefined') {
                 Transaction.prototype[name] = function() {
                     this.queue.push(['deferred', name, Array.prototype.slice.call(arguments, 0)]);
                 }
             }
-        }
+        });
     })();
 
     Model = Database.Model = function(schema) {
