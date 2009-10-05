@@ -153,9 +153,36 @@ test('SQL where', function(d) {
 }, 33).
 
 test('SQL Select', function(d) {
-    ok(1);
-    d.call();
-}).
+    var sql = new SQL({});
+    var res;
+    var db = new Database;
+
+    var selectOK = function(stmt, bind, table, fields, where, options) {
+        var wRes = sql.select(table, fields, where, options);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+        db.executeSql(wRes[0], wRes[1]).
+        next(function(res) {alert(res) }).
+        error(function(er) {
+            // Syntax Error Check
+            var sqlerror = er[0];
+            if (sqlerror.message.indexOf('syntax error') != -1) {
+                ok(false, 'syntax fail' + wRes[0]);
+            } else {
+                console.log(sqlerror);
+                ok(true, 'syntax OK:' +  wRes[0] + ' (' + sqlerror.message + ')');
+            }
+        });
+    }
+
+    selectOK('select * from table1 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table1', '*', ['user = :user AND status = :status', {
+        user: 'nadeko',
+        status: 'completed',
+    }]);
+    setTimeout(function() {
+        d.call();
+    }, 1000);
+}, 3).
 
 test("transaction", function(d) {
     return;

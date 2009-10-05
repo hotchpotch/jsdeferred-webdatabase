@@ -70,14 +70,18 @@
                         }
                         tx.executeSql(str, arg);
                     }
-                    tx.next(function(res) {
-                        nRes = res;
-                    });
                     tx.error(function(res) {
                         nError = res;
                     });
+                    tx.next(function(res) {
+                        nRes = res;
+                    });
                 }).next(function() {
-                    d.call(nRes);
+                    if (nError) {
+                        d.fail(nError);
+                    } else {
+                        d.call(nRes);
+                    }
                 }).error(function(e) {
                     d.fail(e || nError);
                 });
@@ -173,9 +177,9 @@
     });
 
     SQL.prototype = {
-        select: function(sources, fields, where, options) {
+        select: function(table, fields, obj, options) {
             var wheres = this.where(obj);
-            var stmt = 'SELECT ' + fields + ' FROM ' + sources + ' ' + wheres[0];
+            var stmt = 'SELECT ' + fields + ' FROM ' + table + ' ' + wheres[0];
             var bind = wheres[1];
             if (options) {
                 if (options.order)
