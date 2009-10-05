@@ -381,9 +381,21 @@ test('SQL Insert/Update/Delete', function(d) {
         status: 'completed',
     });
 
+    insertOK('insert into table1 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table1', {
+        user: 'nadeko',
+        status: 'completed',
+        foo: undefined,
+    });
+
     updateOK('update table1 SET user = ?, status = ?', ['nadeko', 'completed'], 'table1', {
         user: 'nadeko',
         status: 'completed',
+    });
+
+    updateOK('update table1 SET user = ?, status = ?', ['nadeko', 'completed'], 'table1', {
+        user: 'nadeko',
+        status: 'completed',
+        foo: undefined,
     });
 
     updateOK('update table1 SET user = ?, status = ? WHERE id = ?', ['nadeko', 'completed', 3], 'table1', {
@@ -402,7 +414,7 @@ test('SQL Insert/Update/Delete', function(d) {
     setTimeout(function() {
         d.call();
     }, 2500);
-}, 15, 3000).
+}, 21, 3000).
 
 test('SQL Tables', function(d) {
     var sql = new SQL({});
@@ -433,36 +445,45 @@ test('SQL Tables', function(d) {
     }
     createOK('CREATE TABLE IF NOT EXISTS table1 (id INTEGER PRIMARY KEY, url TEXT UNIQUE NOT NULL, search TEXT, data INTEGER NOT NULL)', 'table1', fields);
 
-
+    dropOK('DROP TABLE IF EXISTS table1', 'table1');
     setTimeout(function() {
         d.call();
     }, 900);
-}, 4, 2000).
+}, 6, 2000).
 
 test('Model', function(d) {
+    var is = function(a, b, mes) {
+        equals(a.toString(), b.toString(), mes);
+    }
     var User = Model({
         table: 'users',
+        primaryKeys: ['id'],
         fields: {
-            'id'      : 'INTEGER PRIMARY KEY',
-            url       : 'TEXT UNIQUE NOT NULL',
-            title     : 'TEXT',
-            comment   : 'TEXT',
-            search    : 'TEXT',
-            date      : 'INTEGER NOT NULL'
+            'id'         : 'INTEGER PRIMARY KEY',
+            name         : 'TEXT UNIQUE NOT NULL',
+            data         : 'TEXT',
+            updated_at   : 'INTEGER'
         }
     });
-    Database.showError = true;
+    is(User.columns, ['id', 'name', 'data', 'updated_at']);
+    Database.debugMessage = true;
     var db = new Database('testuserdb');
-    User.setDatabase(db);
-    User.dropTable().next(function() {
+    User.__defineGetter__('database', function() { return db; });
+    User.dropTable(function() {
         ok(true, 'drop table');
     }).next(function() {
-        User.createTable().next(function() {
+        User.createTable(function() {
             ok(true, 'create table');
-            d.call();
+            var u = new User({
+                name: 'nadeko'
+            });
+            u.save(function(res) {
+                p(res);
+                d.call();
+            });
         });
     });
-}, 2, 3000).
+}, 3, 3000).
 
 test('3', function(d) {
     // d.call();

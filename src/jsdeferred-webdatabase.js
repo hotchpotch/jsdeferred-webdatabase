@@ -12,7 +12,16 @@
 
     var extend = function(to, from) {
         if (!from) return to;
-        for (var key in from) to[key] = from[key];
+        for (var key in from) {
+            to[key] = from[key];
+            var getter, setter;
+            if (getter = from.__lookupGetter__(key)) {
+                if (getter) to.__defineGetter__(key, getter);
+            }
+            if (setter = from.__lookupSetter__(key)) {
+                if (setter) to.__defineSetter__(key, setter);
+            }
+        }
         return to;
     }
 
@@ -72,21 +81,16 @@
                         tx.execute(str, arg);
                     }
                     tx.error(function(res) {
-                        if (Database.showError) Database.debug(sql, args, res);
                         nError = res;
                     }).next(function(res) {
-                        if (Database.showError) Database.debug(sql, args, res);
                         nRes = res;
                     });
                 }).error(function(e) {
-                    if (Database.showError) Database.debug(sql, args, e);
                     d.fail(e || nError);
                 }).next(function() {
                     if (nError) {
-                        if (Database.showError) Database.debug(sql, args, nError);
                         d.fail(nError);
                     } else {
-                        if (Database.showError) Database.debug(sql, args, nRes);
                         d.call(nRes);
                     }
                 });
@@ -137,11 +141,13 @@
                     self.tx = _tx;
                     self._lastResult = res;
                     self.chains(d);
+                    if (Database.debugMessage) Database.debug(res, sql, args);
                     d.call(res);
                 }, function(_tx, error) {
                     self.tx = _tx;
                     self.lastError = [error, sql, args];
                     self.chains(d);
+                    if (Database.debugMessage) Database.debug(error, sql, args);
                     d.fail([error, sql, args]);
                 });
                 return d;
@@ -204,9 +210,11 @@
         insert: function(table, data) {
             var keys = [], bind = [], values = [];
             for (var key in data) {
-                keys.push(key);
-                bind.push(data[key]);
-                values.push('?');
+                if (typeof data[key] != 'undefined') {
+                    keys.push(key);
+                    bind.push(data[key]);
+                    values.push('?');
+                }
             }
             var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
             return [stmt, bind];
@@ -215,8 +223,10 @@
             var wheres, keys = [], bind = [];
             if (where) wheres = this.where(where);
             for (var key in data) {
-                keys.push(key + ' = ?');
-                bind.push(data[key]);
+                if (typeof data[key] != 'undefined') {
+                    keys.push(key + ' = ?');
+                    bind.push(data[key]);
+                }
             }
             var stmt = 'UPDATE ' + table + ' SET ' + keys.join(', ');
             if (wheres) {
@@ -355,32 +365,122 @@
     }
 
     Model = Database.Model = function(schema) {
-        var klass = function() {
-            this.klass = klass;
-            this._fields = schema.fields;
-            this._table = schema.table;
+        var klass = function(data) {
+            if (!data) data = {};
+            this._klass = klass;
+            this._data = {};
+            this.setAttributes(data);
+            if (data._created) {
+                this._created = data._created;
+            }
             return this;
         };
 
-        var sql = klass._sql = new SQL();
+        var sql = klass.sql = new SQL();
         var table = schema.table;
+
         extend(klass, {
-            getDatabase: function() {
+            setColumns: function() {
+                klass._columns = [];
+                var f = klass._fields;
+                for (var key in f) {
+                    klass._columns.push(key);
+                }
+            },
+            setPrimaryKeysHash: function() {
+                klass.pKeyHash = {};
+                for (var i = 0;  i < klass.primaryKeys.length; i++) {
+                    var key = klass.primaryKeys[i];
+                    klass.pKeyHash[key] = true;
+                }
+            },
+            get columns() {
+                return klass._columns;
+            },
+            set fields (fields) {
+                klass._fields = fields;
+                klass.setColumns();
+            },
+            get fields () {
+                return klass._fields;
+            },
+            set primaryKeys (primaryKeys) {
+                klass._primaryKeys = primaryKeys;
+                klass.setPrimaryKeysHash();
+            },
+            get primaryKeys () {
+                return klass._primaryKeys;
+            },
+            set database (db) {
+                klass._db = _db;
+            },
+            get database () {
                 return klass._db;
             },
-            setDatabase: function(db) {
-                klass._db = db;
-            },
             bindSQLexecute: function() {
-                return klass.getDatabase().execute();
+                return klass.database.execute();
             },
-            createTable: function() {
-                return klass.getDatabase().execute(sql.create(schema.table, schema.fields));
+            createTable: function(fun) {
+                var d = klass.database.execute(sql.create(klass.table, klass.fields));
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
             },
-            dropTable: function() {
-                return klass.getDatabase().execute(sql.drop(schema.table));
+            dropTable: function(fun) {
+                var d = klass.database.execute(sql.drop(klass.table));
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
             }
         });
+        klass.fields = schema.fields;
+        klass.primaryKeys = schema.primaryKeys;
+        if (!schema.primaryKeys) throw new Error('primaryKeys required.');
+        if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
+
+        klass.prototype = {
+            execute: function(sql) {
+                if (sql instanceof Array) {
+                    return klass.database.execute(sql[0], sql[1]);
+                } else {
+                    throw new Error ('execute(stmt, bind');
+                }
+            },
+            set: function(key, value) {
+                this._data[key] = value;
+            },
+            get: function(key) {
+                return this._data[key];
+            },
+            getFieldData: function(priKey) {
+                var data = {};
+                for (var i = 0;  i < klass.columns.length; i++) {
+                    var key = klass.columns[i];
+                    if (priKey || !klass.pKeyHash[key]) data[key] = this.get(key);
+                }
+                return data;
+            },
+            setAttributes: function(data) {
+                if (data) {
+                    for (var i = 0;  i < klass.columns.length; i++) {
+                        var key = klass.columns[i];
+                        if (typeof data[key] != 'undefined') {
+                            this.set(key, data[key]);
+                        }
+                    }
+                }
+            },
+            _insertOrUpdate: function() {
+                var data = this.getFieldData(false);
+                if (this._created) {
+                } else {
+                    return sql.insert(klass.table, data);
+                }
+            },
+            save: function(fun) {
+                var d = this._insertOrUpdate();
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
+            }
+        }
 
         return klass;
     }
