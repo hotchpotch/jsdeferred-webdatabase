@@ -439,8 +439,8 @@ test('SQL Tables', function(d) {
     }, 900);
 }, 4, 2000).
 
-test('Model init', function(d) {
-    window.User = Model({
+test('Model', function(d) {
+    var User = Model({
         table: 'users',
         fields: {
             'id'      : 'INTEGER PRIMARY KEY',
@@ -451,11 +451,18 @@ test('Model init', function(d) {
             date      : 'INTEGER NOT NULL'
         }
     });
-    User.createTable(function() {
-        ok(true, 'createTable');
-        d.call();
+    Database.showError = true;
+    var db = new Database('testuserdb');
+    User.setDatabase(db);
+    User.dropTable().next(function() {
+        ok(true, 'drop table');
+    }).next(function() {
+        User.createTable().next(function() {
+            ok(true, 'create table');
+            d.call();
+        });
     });
-}).
+}, 2, 3000).
 
 test('3', function(d) {
     // d.call();

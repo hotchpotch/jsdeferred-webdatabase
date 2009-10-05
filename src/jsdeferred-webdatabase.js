@@ -35,6 +35,7 @@
 
     extend(Database, {
         _instances: {},
+        debug: p,
         global: null
     });
 
@@ -51,8 +52,7 @@
         getDatabase: function() {
             var options = this.options;
             return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
-        }
-        ,
+        },
         execute: function(sql, args) {
             var self = this;
             return next(function() {
@@ -72,16 +72,21 @@
                         tx.execute(str, arg);
                     }
                     tx.error(function(res) {
+                        if (Database.showError) Database.debug(sql, args, res);
                         nError = res;
                     }).next(function(res) {
+                        if (Database.showError) Database.debug(sql, args, res);
                         nRes = res;
                     });
                 }).error(function(e) {
+                    if (Database.showError) Database.debug(sql, args, e);
                     d.fail(e || nError);
                 }).next(function() {
                     if (nError) {
+                        if (Database.showError) Database.debug(sql, args, nError);
                         d.fail(nError);
                     } else {
+                        if (Database.showError) Database.debug(sql, args, nRes);
                         d.call(nRes);
                     }
                 });
@@ -357,19 +362,23 @@
             return this;
         };
 
+        var sql = klass._sql = new SQL();
+        var table = schema.table;
         extend(klass, {
+            getDatabase: function() {
+                return klass._db;
+            },
+            setDatabase: function(db) {
+                klass._db = db;
+            },
+            bindSQLexecute: function() {
+                return klass.getDatabase().execute();
+            },
             createTable: function() {
+                return klass.getDatabase().execute(sql.create(schema.table, schema.fields));
             },
-            setConnection: function(dbName, options) {
-            },
-            getConnection: function() {
-            },
-            transition: function(func) {
-                var conn = klass.getConnection();
-                var d = new $D;
-                // klass._transaction = true;
-                // conn.transition(func, function() { d.call() },  function() { d.fail() });
-                return;
+            dropTable: function() {
+                return klass.getDatabase().execute(sql.drop(schema.table));
             }
         });
 
