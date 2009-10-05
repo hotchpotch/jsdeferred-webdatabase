@@ -68,6 +68,24 @@ Deferred.register('test', Deferred.test);
 var Database = Deferred.WebDatabase;
 var Model = Database.Model, SQL = Database.SQL;
 
+var syntaxCheck = function(stmt, bind) {
+    if (!syntaxCheck.db) syntaxCheck.db = new Database('syntaxcheck');
+
+    syntaxCheck.db.execute(stmt, bind).
+            next(function(aa) {
+                ok(false, 'don"t call this');
+            }).
+            error(function(er) {
+                // Syntax Error Check
+                var sqlerror = er[0];
+                if (sqlerror.message.indexOf('syntax error') != -1) {
+                    ok(false, 'web database syntax fail: ' + stmt + ' (' + sqlerror.message + ')');
+                } else {
+                    ok(true, 'web database syntax OK: ' +  stmt + ' (' + sqlerror.message + ')');
+                }
+            });
+}
+
 Deferred.
 test("Database instance", function(d){
     var db = new Database();
@@ -98,24 +116,11 @@ test('SQL where', function(d) {
     holderOK('status != ?', ['completed'], 'status', {'!=': 'completed'});
     holderOK('(date < ?) OR (date > ?)', [10, 100], 'date', {'<': '10', '>': 100});
 
-    var db = new Database;
     var whereOK = function(stmt, bind, obj) {
         var wRes = sql.where(obj);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
-        db.execute('select * from table1 ' + wRes[0], wRes[1]).
-                next(function(aa) {
-                    ok(false, 'don"t call this');
-                }).
-                error(function(er) {
-                    // Syntax Error Check
-                    var sqlerror = er[0];
-                    if (sqlerror.message.indexOf('syntax error') != -1) {
-                        ok(false, 'web database syntax fail: ' + wRes[0] + ' (' + sqlerror.message + ')');
-                    } else {
-                        ok(true, 'web database syntax OK: ' +  wRes[0] + ' (' + sqlerror.message + ')');
-                    }
-                });
+        syntaxCheck('select * from table1 ' + wRes[0], wRes[1]);
     }
     var sTmp = "WHERE user = 'nadeko' AND status = 'completed'";
     whereOK(sTmp, null, sTmp);
@@ -181,19 +186,7 @@ test('SQL Select', function(d) {
         var wRes = sql.select(table, fields, where, options);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
-        db.execute(wRes[0], wRes[1]).
-                next(function(aa) {
-                    ok(false, 'don"t call this');
-                }).
-                error(function(er) {
-                    // Syntax Error Check
-                    var sqlerror = er[0];
-                    if (sqlerror.message.indexOf('syntax error') != -1) {
-                        ok(false, 'syntax fail: ' + wRes[0] + ' (' + sqlerror.message + ')');
-                    } else {
-                        ok(true, 'syntax OK: ' +  wRes[0] + ' (' + sqlerror.message + ')');
-                    }
-                });
+        syntaxCheck(wRes[0], wRes[1]);
     }
 
     selectOK('select * from table1 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table1', '*', ['user = :user AND status = :status', {
