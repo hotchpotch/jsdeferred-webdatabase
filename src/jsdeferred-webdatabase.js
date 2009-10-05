@@ -158,14 +158,20 @@
     })();
 
     // SQL queryclass like SQL::Abstract.
-    SQL = Database.SQL = function(table) {
-        this.table = table;
+    SQL = Database.SQL = function(options) {
+        this.options = extend({
+        }, options);
         return this;
     }
 
     extend(SQL, {
         isString: function(obj) {
             return typeof obj === 'string' || obj instanceof String;
+        }
+    });
+
+    SQL.prototype = {
+        query: function() {
         },
         where: function(obj) {
             if (SQL.isString(obj)) {
@@ -192,7 +198,7 @@
                     return ['WHERE ' + stmt, bind];
                 }
             } else {
-                return SQL.whereHash(obj);
+                return this.whereHash(obj);
             }
         },
         whereHash: function(hash) {
@@ -204,14 +210,14 @@
                     var len = val.length;
                     var tmp = [];
                     while (len--) {
-                        tmp.push(SQL.holder(key)[0]);
+                        tmp.push(this.holder(key)[0]);
                     }
                     stmt.push('(' + tmp.join(' OR ') + ')');
                 } else if (SQL.isString(val)) {
                     bind.push(val);
-                    stmt.push(SQL.holder(key)[0]);
+                    stmt.push(this.holder(key)[0]);
                 } else {
-                    var r = SQL.holder(key, val);
+                    var r = this.holder(key, val);
                     bind = bind.concat(r[1]);
                     stmt.push(r[0]);
                 }
@@ -238,9 +244,6 @@
             }
             return [stmt, bind];
         }
-    });
-
-    SQL.prototype = {
     }
 
     Model = Database.Model = function(schema) {
