@@ -53,7 +53,7 @@
             return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
         }
         /*,
-        executeSql: function(sql, args) {
+        execute: function(sql, args) {
             var self = this;
             return next(function() {
                 var d = new $D;
@@ -69,7 +69,7 @@
                         } else {
                             str = sql[i], arg = null;
                         }
-                        tx.executeSql(str, arg);
+                        tx.execute(str, arg);
                     }
                     tx.error(function(res) {
                         nError = res;
@@ -137,14 +137,14 @@
             }
         },
         /*
-         * tx.executeSql('SELECT * from users').next(result) {
+         * tx.execute('SELECT * from users').next(result) {
          * };
-         * tx.executeSql('SELECT * from users').executeSql(function(result) {
+         * tx.execute('SELECT * from users').execute(function(result) {
          *     var name = result.rows.item(0).name;
          *     return ['SELECT * from users where name = ?', name];
          * });
          */
-        executeSql: function(sql, args) {
+        execute: function(sql, args) {
             this.queue.push(['sql', sql, args]);
             return this;
         }

@@ -162,7 +162,7 @@ test('SQL Select', function(d) {
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
         db.transaction(function(tx) {
-            tx.executeSql(wRes[0], wRes[1]).
+            tx.execute(wRes[0], wRes[1]).
                 error(function(er) {
                     // Syntax Error Check
                     var sqlerror = er[0];
@@ -234,19 +234,19 @@ test("transaction", function(d) {
     });
 }, 3).
 
-test("executeSql", function(d) {
+test("execute", function(d) {
     var db = new Database;
     parallel([
         db.transaction(function(tx) {
             tx.
-              executeSql('drop table if exists `Test`').
-              executeSql(function(result) {
+              execute('drop table if exists `Test`').
+              execute(function(result) {
                   ok(result, 'callback with result');
                   return 'create table if not exists Test (id INT UNIQUE, name TEXT UNIQUE)';
               }).
-              executeSql("insert into Test values (1, 'first')").
-              executeSql("insert into Test values (?, ?)", [2,"second"]).
-              executeSql("select * from Test order by id").
+              execute("insert into Test values (1, 'first')").
+              execute("insert into Test values (?, ?)", [2,"second"]).
+              execute("select * from Test order by id").
               next(function(result) {
                   equals(result.rows.length, 2);
                   equals(result.rows.item(0).name, 'first');
@@ -255,15 +255,15 @@ test("executeSql", function(d) {
         }),
         db.transaction(function(tx) {
             tx.
-              executeSql('drop table if exists `Test`').
-              executeSql(function(result) {
+              execute('drop table if exists `Test`').
+              execute(function(result) {
                   ok(result, 'callback with result');
                   return 'create table if not exists Test (eid INTEGER PRIMARY KEY, name TEXT)';
               }).
-              executeSql("insert into Test (name) values ('first')").
-              executeSql("insert into Test (name) values ('second')").
-              executeSql("insert into Test (name) values ('third')").
-              executeSql("select * from Test order by eid").
+              execute("insert into Test (name) values ('first')").
+              execute("insert into Test (name) values ('second')").
+              execute("insert into Test (name) values ('third')").
+              execute("select * from Test order by eid").
               next(function(result) {
                   equals(result.rows.length, 3);
                   equals(result.rows.item(0).name, 'first');
@@ -275,8 +275,8 @@ test("executeSql", function(d) {
         db.transaction(function(tx) {
             var eSql = 'create table `Test`';
             tx.
-              executeSql('create table if not exists `Test`').
-              executeSql(eSql).
+              execute('create table if not exists `Test`').
+              execute(eSql).
               error(function(e) {
                   ok(e[0], 'get transaction errorback');
                   equals(e[1], eSql);
@@ -284,15 +284,15 @@ test("executeSql", function(d) {
         }),
         db.transaction(function(tx) {
             tx.
-              executeSql('drop table if exists `Test`').
-              executeSql(function(result) {
+              execute('drop table if exists `Test`').
+              execute(function(result) {
                   ok(result, 'callback with result');
                   return 'create table if not exists Test (id INT UNIQUE, name TEXT UNIQUE)';
               }).
-              executeSql("insert into Test values (1, 'first')").
-              executeSql("insert into Test values (?, ?)", [3,"third"]).
-              executeSql("insert into Test values (?, ?)", [2,"second"]).
-              executeSql("select * from Test order by id").
+              execute("insert into Test values (1, 'first')").
+              execute("insert into Test values (?, ?)", [3,"third"]).
+              execute("insert into Test values (?, ?)", [2,"second"]).
+              execute("select * from Test order by id").
               next(function(result) {
                   equals(result.rows.length, 3);
                   equals(result.rows.item(0).name, 'first');
@@ -302,19 +302,19 @@ test("executeSql", function(d) {
         })
         /*
         ,
-        db.executeSql(
+        db.execute(
             'drop table if exists `Test3`'
         ).next(function(res) {
-            ok(res, 'no transaction executeSql');
+            ok(res, 'no transaction execute');
         }).next(function() {
             var d = new Deferred();
-            db.executeSql([
+            db.execute([
                 'create table if not exists Test3 (id INT UNIQUE, name TEXT UNIQUE)',
                 "insert into Test3 values (3, 'third')",
                 ["insert into Test3 values (?, ?)", [2, 'second']],
                 ["select * from Test3 where id = ?", [3]]
             ]).next(function(res) {
-                ok(res, 'no transaction executeSql(ary)');
+                ok(res, 'no transaction execute(ary)');
                 equals(res.rows.length, 1);
                 equals(res.rows.item(0).name, 'third');
                 d.call();
