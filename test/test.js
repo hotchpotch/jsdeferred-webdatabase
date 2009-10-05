@@ -3,29 +3,43 @@ Deferred.define();
 
 Deferred.test = function(name, t, count, wait) {
     var d = new Deferred();
-    setTimeout(function() {
-        var setupDeferred = new Deferred(), teardownDeferred = new Deferred();
-        var setup = Deferred.test.setup, teardown = Deferred.test.teardown;
-        setupDeferred.next(function() {
-            next(function() {
-                var args = [name, function() {
-                    stop(wait || 3000);
-                    try {
-                        t(teardownDeferred);
-                    } catch(e) {
-                        ok(false, 'test error: ' + e.toString());
-                        teardownDeferred.call();
-                    }
-                }];
-                if (count) args.push(count)
-                test.apply(test, args);
-            });//, 0);
-            return teardownDeferred;
-        }).next(function() {
-            teardown(d);
-        });
-        setup(setupDeferred);
-    }, 0);
+    var search = location.search;
+    var func = function() {
+        setTimeout(function() {
+            var setupDeferred = new Deferred(), teardownDeferred = new Deferred();
+            var setup = Deferred.test.setup, teardown = Deferred.test.teardown;
+            setupDeferred.next(function() {
+                next(function() {
+                    var args = [name, function() {
+                        stop(wait || 3000);
+                        try {
+                            t(teardownDeferred);
+                        } catch(e) {
+                            ok(false, 'test error: ' + e.toString());
+                            teardownDeferred.call();
+                        }
+                    }];
+                    if (count) args.push(count)
+                    test.apply(test, args);
+                });//, 0);
+                return teardownDeferred;
+            }).next(function() {
+                teardown(d);
+            });
+            setup(setupDeferred);
+        }, 0);
+    }
+    if (search.indexOf('?') == 0) {
+        if (decodeURIComponent(search.substring(1)) != name) {
+            setTimeout(function() {
+                d.call();
+            }, 0);
+        } else {
+            func();
+        }
+    } else {
+        func();
+    }
     return d;
 };
 
@@ -63,7 +77,7 @@ test("Database instance", function(d){
     d.call();
 }, 5).
 
-test('SQL', function(d) {
+test('SQL where', function(d) {
     ok(SQL.isString('a'), 'isString');
     ok(SQL.isString(new String('a')), 'isString');
     ok(!SQL.isString({}), 'isString');
@@ -137,6 +151,11 @@ test('SQL', function(d) {
 
     d.call();
 }, 33).
+
+test('SQL Select', function(d) {
+    ok(1);
+    d.call();
+}).
 
 test("transaction", function(d) {
     return;
