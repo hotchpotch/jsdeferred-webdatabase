@@ -227,6 +227,16 @@
             */
             return [stmt, bind];
         },
+        'deleteSql': function(table, where) {
+            var wheres, bind = [];
+            if (where) wheres = this.where(where);
+            var stmt = 'DELETE FROM ' + table;
+            if (wheres) {
+                stmt += ' ' + wheres[0];
+                bind = bind.concat(wheres[1]);
+            }
+            return [stmt, bind];
+        },
         optionsToSQL: function(options) {
             var stmt = '', bind = [];
             if (options) {

@@ -344,7 +344,7 @@ test('SQL Select', function(d) {
     }, 2500);
 }, 15, 3000).
 
-test('SQL Insert/Update', function(d) {
+test('SQL Insert/Update/Delete', function(d) {
     var sql = new SQL({});
 
     var insertOK = function(stmt, bind, table, data) {
@@ -356,6 +356,13 @@ test('SQL Insert/Update', function(d) {
 
     var updateOK = function(stmt, bind, table, data, where) {
         var wRes = sql.update(table, data, where);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+        syntaxCheck(wRes[0], wRes[1]);
+    }
+
+    var deleteOK = function(stmt, bind, table, where) {
+        var wRes = sql.deleteSql(table, where);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
         syntaxCheck(wRes[0], wRes[1]);
@@ -378,10 +385,16 @@ test('SQL Insert/Update', function(d) {
         id: 3
     });
 
+    deleteOK('delete from table1', [], 'table1');
+
+    deleteOK('delete from table1 WHERE id = ?', [3], 'table1', {
+        id: 3
+    });
+
     setTimeout(function() {
         d.call();
     }, 2500);
-}, 9, 3000).
+}, 15, 3000).
 
 test('Model init', function(d) {
     window.User = Model({

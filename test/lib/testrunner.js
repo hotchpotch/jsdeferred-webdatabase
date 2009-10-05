@@ -439,9 +439,9 @@ function test(name, callback, testCount) {
         config.stats.bad += bad;
     
         var b = $("<strong/>").html(name + " <b style='color:black;'>(<b class='fail'>" + bad + "</b>, <b class='pass'>" + good + "</b>, " + config.assertions.length + ")</b>")
-        .click(function(){
-            $(this).next().toggle();
-        })
+        // .click(function(){
+        //     $(this).next().toggle();
+        // })
         .dblclick(function(event) {
             var target = $(event.target).filter("strong").clone();
             if ( target.length ) {
