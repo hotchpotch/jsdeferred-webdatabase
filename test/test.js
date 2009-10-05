@@ -354,8 +354,8 @@ test('SQL Insert/Update', function(d) {
         syntaxCheck(wRes[0], wRes[1]);
     }
 
-    var updateOK = function(stmt, bind, table, data, where, options) {
-        var wRes = sql.update(table, data, where, options);
+    var updateOK = function(stmt, bind, table, data, where) {
+        var wRes = sql.update(table, data, where);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
         syntaxCheck(wRes[0], wRes[1]);

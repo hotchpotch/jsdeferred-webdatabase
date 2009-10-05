@@ -206,7 +206,7 @@
             var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
             return [stmt, bind];
         },
-        update: function(table, data, where, options) {
+        update: function(table, data, where) {
             var wheres, keys = [], bind = [];
             if (where) wheres = this.where(where);
             for (var key in data) {
@@ -218,11 +218,13 @@
                 stmt += ' ' + wheres[0];
                 bind = bind.concat(wheres[1]);
             }
+            /* SQLite not support update limit/order ...
             if (options) {
                 var opt = this.optionsToSQL(options);
                 stmt += opt[0];
                 bind = bind.concat(opt[1]);
             }
+            */
             return [stmt, bind];
         },
         optionsToSQL: function(options) {
