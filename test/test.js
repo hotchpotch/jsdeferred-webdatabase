@@ -251,6 +251,10 @@ test('SQL where', function(d) {
         s_atus: 'completed',
     }]);
 
+    whereOK('WHERE uid = ?', [10], {
+        uid: 10
+    });
+
     whereOK('WHERE user = ? AND status = ?', ['nadeko', 'completed'], ['user = :user AND status = :status', {
         user: 'nadeko',
         status: 'completed',
@@ -289,7 +293,7 @@ test('SQL where', function(d) {
     setTimeout(function() {
     d.call();
     }, 3000);
-}, 45, 3500).
+}, 48, 3500).
 
 test('SQL Select', function(d) {
     var sql = new SQL({});
@@ -351,7 +355,7 @@ test('SQL Insert/Update', function(d) {
     }
 
     var updateOK = function(stmt, bind, table, data, where, options) {
-        var wRes = sql.update(table, where, options);
+        var wRes = sql.update(table, data, where, options);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
         syntaxCheck(wRes[0], wRes[1]);
@@ -362,10 +366,22 @@ test('SQL Insert/Update', function(d) {
         status: 'completed',
     });
 
+    updateOK('update table1 SET user = ?, status = ?', ['nadeko', 'completed'], 'table1', {
+        user: 'nadeko',
+        status: 'completed',
+    });
+
+    updateOK('update table1 SET user = ?, status = ? WHERE id = ?', ['nadeko', 'completed', 3], 'table1', {
+        user: 'nadeko',
+        status: 'completed',
+    }, {
+        id: 3
+    });
+
     setTimeout(function() {
         d.call();
     }, 2500);
-}, 3, 3000).
+}, 9, 3000).
 
 test('Model init', function(d) {
     window.User = Model({

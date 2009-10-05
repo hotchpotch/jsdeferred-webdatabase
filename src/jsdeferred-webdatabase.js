@@ -185,8 +185,8 @@
     });
 
     SQL.prototype = {
-        select: function(table, fields, obj, options) {
-            var wheres = this.where(obj);
+        select: function(table, fields, where, options) {
+            var wheres = this.where(where);
             var stmt = 'SELECT ' + fields + ' FROM ' + table + ' ' + wheres[0];
             var bind = wheres[1];
             if (options) {
@@ -206,6 +206,25 @@
             var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
             return [stmt, bind];
         },
+        update: function(table, data, where, options) {
+            var wheres, keys = [], bind = [];
+            if (where) wheres = this.where(where);
+            for (var key in data) {
+                keys.push(key + ' = ?');
+                bind.push(data[key]);
+            }
+            var stmt = 'UPDATE ' + table + ' SET ' + keys.join(', ');
+            if (wheres) {
+                stmt += ' ' + wheres[0];
+                bind = bind.concat(wheres[1]);
+            }
+            if (options) {
+                var opt = this.optionsToSQL(options);
+                stmt += opt[0];
+                bind = bind.concat(opt[1]);
+            }
+            return [stmt, bind];
+        },
         optionsToSQL: function(options) {
             var stmt = '', bind = [];
             if (options) {
@@ -216,10 +235,12 @@
                     stmt += ' GROUP BY ' + options.group;
                 }
                 if (typeof options.limit != 'undefined') {
-                    stmt += ' LIMIT ?'; bind.push(parseInt(options.limit));
+                    stmt += ' LIMIT ?';
+                    bind.push(parseInt(options.limit));
                 }
                 if (typeof options.offset != 'undefined') {
-                    stmt += ' OFFSET ?'; bind.push(parseInt(options.offset));
+                    stmt += ' OFFSET ?';
+                    bind.push(parseInt(options.offset));
                 }
             }
             return [stmt, bind];
@@ -281,7 +302,7 @@
                 stmt = key + ' IS NULL';
             } else if (hash == SQL.NOT_NULL) {
                 stmt = key + ' IS NOT NULL';
-            } else if (SQL.isString(hash)) {
+            } else if (SQL.isString(hash) || !isNaN(hash)) {
                 stmt = key + ' = ?';
                 bind = [hash];
             } else if (hash instanceof Array) {
