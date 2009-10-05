@@ -51,7 +51,8 @@
         getDatabase: function() {
             var options = this.options;
             return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
-        },
+        }
+        /*,
         executeSql: function(sql, args) {
             var self = this;
             return next(function() {
@@ -72,22 +73,22 @@
                     }
                     tx.error(function(res) {
                         nError = res;
-                    });
-                    tx.next(function(res) {
+                    }).next(function(res) {
                         nRes = res;
                     });
+                }).error(function(e) {
+                    d.fail(e || nError);
                 }).next(function() {
                     if (nError) {
                         d.fail(nError);
                     } else {
                         d.call(nRes);
                     }
-                }).error(function(e) {
-                    d.fail(e || nError);
                 });
                 return d;
             });
         }
+        */
     }
 
     Transaction = Database.Transaction = function(tx) {
@@ -156,6 +157,7 @@
             if (typeof method == 'function' && typeof Transaction.prototype[name] == 'undefined') {
                 Transaction.prototype[name] = function() {
                     this.queue.push(['deferred', name, Array.prototype.slice.call(arguments, 0)]);
+                    return this;
                 }
             }
         });
@@ -182,14 +184,18 @@
             var stmt = 'SELECT ' + fields + ' FROM ' + table + ' ' + wheres[0];
             var bind = wheres[1];
             if (options) {
-                if (options.order)
+                if (options.order) {
                     stmt += ' ORDER BY ' + options.order;
-                if (options.group)
+                }
+                if (options.group) {
                     stmt += ' GROUP BY ' + options.group;
-                if (typeof options.limit != 'undefined')
+                }
+                if (typeof options.limit != 'undefined') {
                     stmt += ' LIMIT ?'; bind.push(parseInt(options.limit));
-                if (typeof options.offset != 'undefined')
+                }
+                if (typeof options.offset != 'undefined') {
                     stmt += ' OFFSET ?'; bind.push(parseInt(options.offset));
+                }
             }
             return [stmt, bind];
         },

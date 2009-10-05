@@ -161,17 +161,17 @@ test('SQL Select', function(d) {
         var wRes = sql.select(table, fields, where, options);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
-        db.executeSql(wRes[0], wRes[1]).
-        next(function(res) {alert(res) }).
-        error(function(er) {
-            // Syntax Error Check
-            var sqlerror = er[0];
-            if (sqlerror.message.indexOf('syntax error') != -1) {
-                ok(false, 'syntax fail' + wRes[0]);
-            } else {
-                console.log(sqlerror);
-                ok(true, 'syntax OK:' +  wRes[0] + ' (' + sqlerror.message + ')');
-            }
+        db.transaction(function(tx) {
+            tx.executeSql(wRes[0], wRes[1]).
+                error(function(er) {
+                    // Syntax Error Check
+                    var sqlerror = er[0];
+                    if (sqlerror.message.indexOf('syntax error') != -1) {
+                        ok(false, 'syntax fail: ' + wRes[0] + ' (' + sqlerror.message + ')');
+                    } else {
+                        ok(true, 'syntax OK: ' +  wRes[0] + ' (' + sqlerror.message + ')');
+                    }
+                });
         });
     }
 
@@ -179,13 +179,42 @@ test('SQL Select', function(d) {
         user: 'nadeko',
         status: 'completed',
     }]);
+
+    selectOK('select * from table1 WHERE user IS NULL AND status = ? LIMIT ?', ['completed', 1], 'table1', '*', {
+        user: null,
+        status: 'completed',
+    }, {
+        limit: 1
+    });
+
+    selectOK('select * from table1 WHERE user IS NULL AND status = ? ORDER BY user desc', ['completed'], 'table1', '*', {
+        user: null,
+        status: 'completed',
+    }, {
+        order: 'user desc'
+    });
+
+    selectOK('select * from table1 WHERE user IS NULL AND status = ? GROUP BY age', ['completed'], 'table1', '*', {
+        user: null,
+        status: 'completed',
+    }, {
+        group: 'age'
+    });
+
+    selectOK('select * from table1 WHERE user IS NULL AND status = ? LIMIT ? OFFSET ?', ['completed', 20, 10], 'table1', '*', {
+        user: null,
+        status: 'completed',
+    }, {
+        limit: 20,
+        offset: 10
+    });
+
     setTimeout(function() {
         d.call();
-    }, 1000);
-}, 3).
+    }, 2500);
+}, 15, 5000).
 
 test("transaction", function(d) {
-    return;
     var db = new Database;
     db.transaction(function(sql) {
         ok(true, 'transaction');
@@ -270,7 +299,9 @@ test("executeSql", function(d) {
                   equals(result.rows.item(1).name, 'second');
                   equals(result.rows.item(2).name, 'third');
               });
-        }),
+        })
+        /*
+        ,
         db.executeSql(
             'drop table if exists `Test3`'
         ).next(function(res) {
@@ -290,10 +321,11 @@ test("executeSql", function(d) {
             });
             return d;
         })
+        */
     ]).next(function() {
         d.call();
     });
-}, 21).
+}, 17, 3000).
 
 test('Model init', function(d) {
     window.User = Model({
