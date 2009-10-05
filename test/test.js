@@ -313,6 +313,8 @@ test('SQL Select', function(d) {
         syntaxCheck(wRes[0], wRes[1]);
     }
 
+    selectOK('select * from table1', [], 'table1');
+
     selectOK('select * from table1 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table1', '*', ['user = :user AND status = :status', {
         user: 'nadeko',
         status: 'completed',
@@ -350,7 +352,7 @@ test('SQL Select', function(d) {
     setTimeout(function() {
         d.call();
     }, 2500);
-}, 15, 3000).
+}, 18, 3000).
 
 test('SQL Insert/Update/Delete', function(d) {
     var sql = new SQL({});
@@ -495,13 +497,22 @@ test('Model', function(d) {
                     u3.save(function() {
                         equals(u3.uid, 2, 'uid');
                         equals(u3.name, 'yuno', 'name');
+                        User.find({
+                            where: { name: 'yuno' }
+                        }).next(function(res) {
+                            ok(res.length == 1)
+                            var r = res[0];
+                            ok(r instanceof User);
+                            equals(r.uid, 2);
+                            equals(r.name, 'yuno');
+                        });
                         d.call();
                     });
                 });
             });
         });
     });
-}, 10, 3000).
+}, 14, 3000).
 
 test('3', function(d) {
     // d.call();

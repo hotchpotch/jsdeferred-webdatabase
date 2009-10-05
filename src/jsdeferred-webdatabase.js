@@ -197,9 +197,14 @@
 
     SQL.prototype = {
         select: function(table, fields, where, options) {
-            var wheres = this.where(where);
-            var stmt = 'SELECT ' + fields + ' FROM ' + table + ' ' + wheres[0];
-            var bind = wheres[1];
+            if (!fields) fields = '*';
+            var stmt, bind = [];
+            stmt = 'SELECT ' + (fields || '*') + ' FROM ' + table;
+            if (where) {
+                var wheres = this.where(where);
+                stmt += ' ' + wheres[0];
+                bind = wheres[1];
+            }
             if (options) {
                 var opt = this.optionsToSQL(options);
                 stmt += opt[0];
@@ -430,8 +435,39 @@
             get database () {
                 return klass._db;
             },
+            execute: function(sql) {
+                if (sql instanceof Array) {
+                    return klass.database.execute(sql[0], sql[1]);
+                } else {
+                    throw new Error ('execute(stmt, bind');
+                }
+            },
             bindSQLexecute: function() {
                 return klass.database.execute();
+            },
+            find: function(options) {
+                var d = klass.execute(klass.select(options.where, options.fields, options));
+                d = d.next(function(res) {
+                    return klass.resultSet(res, options.resultType);
+                });
+                return d;
+            },
+            resultSet: function(res, type) {
+                // default
+                return klass.resultSetInstance(res);
+            },
+            resultSetInstance: function(res) {
+                var result = [], rows = res.rows;
+                var len = rows.length;
+                for (var i = 0;  i < len; i++) {
+                    var r = new klass(rows.item(i));
+                    r._created = true;
+                    result.push(r);
+                }
+                return result;
+            },
+            select: function(where, fields, options) {
+                return sql.select(klass.table, fields, where, options);
             },
             createTable: function(fun) {
                 var d = klass.database.execute(sql.create(klass.table, klass.fields));
@@ -450,13 +486,6 @@
         if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
 
         klass.prototype = {
-            execute: function(sql) {
-                if (sql instanceof Array) {
-                    return klass.database.execute(sql[0], sql[1]);
-                } else {
-                    throw new Error ('execute(stmt, bind');
-                }
-            },
             set: function(key, value) {
                 this._data[key] = value;
             },
@@ -490,17 +519,21 @@
                 }
             },
             save: function(fun) {
-                var data = this.getFieldData(false);
+                var d;
                 if (this._created) {
+                    var data = this.getFieldData(true);
+                    d = klass.execute(sql.update(klass.table, data));
                 } else {
+                    var data = this.getFieldData(false);
+                    d = klass.execute(sql.insert(klass.table, data));
                 }
-                var d = this.execute(sql.insert(klass.table, data));
                 var self = this;
-                return d.next(function(res) {
+                d = d.next(function(res) {
                     self._updateFromResult(res);
-                    p(self.uid);
                     return self;
-                }).next(fun);
+                });
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
             }
         }
         klass.defineGetterSetters();
