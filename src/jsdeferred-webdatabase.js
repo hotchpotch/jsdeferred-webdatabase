@@ -257,6 +257,20 @@
             }
             return [stmt, bind];
         },
+        create: function(table, fields, force) {
+            var stmt = 'CREATE TABLE ' + (!force ? 'IF NOT EXISTS ' : '' ) + table + ' ';
+            var bind = [];
+            var values = [];
+            for (var key in fields) {
+                bind.push(key + ' ' + fields[key]);
+            }
+            stmt += ' (' + bind.join(', ') + ')';
+            // stmt += ' IF NOT EXISTS ' + table;
+            return stmt;
+        },
+        drop: function(table, force) {
+            return 'DROP TABLE ' + (!force ? 'IF EXISTS ' : '' ) + table;
+        },
         where: function(obj) {
             if (SQL.isString(obj)) {
                 return [obj, null];

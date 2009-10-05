@@ -68,20 +68,28 @@ Deferred.register('test', Deferred.test);
 var Database = Deferred.WebDatabase;
 var Model = Database.Model, SQL = Database.SQL;
 
-var syntaxCheck = function(stmt, bind) {
+var syntaxCheck = function(stmt, bind, noError) {
     if (!syntaxCheck.db) syntaxCheck.db = new Database('syntaxcheck');
 
     syntaxCheck.db.execute(stmt, bind).
             next(function(aa) {
-                ok(false, 'don"t call this');
+                if (noError) {
+                    ok(true, 'Syntax OK');
+                } else {
+                    ok(false, 'don"t call this');
+                }
             }).
             error(function(er) {
                 // Syntax Error Check
                 var sqlerror = er[0];
-                if (sqlerror.message.indexOf('syntax error') != -1) {
-                    ok(false, 'web database syntax fail: ' + stmt + ' (' + sqlerror.message + ')');
+                if (noError) {
+                    ok(false, 'don"t call this:' + sqlerror.message);
                 } else {
-                    ok(true, 'web database syntax OK: ' +  stmt + ' (' + sqlerror.message + ')');
+                    if (sqlerror.message.indexOf('syntax error') != -1) {
+                        ok(false, 'web database syntax fail: ' + stmt + ' (' + sqlerror.message + ')');
+                    } else {
+                        ok(true, 'web database syntax OK: ' +  stmt + ' (' + sqlerror.message + ')');
+                    }
                 }
             });
 }
@@ -396,6 +404,41 @@ test('SQL Insert/Update/Delete', function(d) {
     }, 2500);
 }, 15, 3000).
 
+test('SQL Tables', function(d) {
+    var sql = new SQL({});
+
+    var dropOK = function(stmt, table, force) {
+        var wRes = sql.drop(table, force);
+        equals(wRes, stmt);
+        syntaxCheck(wRes, [], true);
+    }
+    dropOK('DROP TABLE IF EXISTS table1', 'table1');
+
+    var createOK = function(stmt, table, fields, force) {
+        var wRes = sql.create(table, fields, force);
+        // equals(stmt.toUpperCase(), wRes.toUpperCase());
+        ok(1);
+        syntaxCheck(wRes, [], true);
+    }
+
+    var fields = {
+        'id'      : 'INTEGER PRIMARY KEY',
+        url       : 'TEXT UNIQUE NOT NULL',
+        search    : 'TEXT',
+        date      : 'INTEGER NOT NULL'
+    };
+    var res = [];
+    for (var key in fields) {
+        res.push(key + ' ' + fields[key]);
+    }
+    createOK('CREATE TABLE IF NOT EXISTS table1 (id INTEGER PRIMARY KEY, url TEXT UNIQUE NOT NULL, search TEXT, data INTEGER NOT NULL)', 'table1', fields);
+
+
+    setTimeout(function() {
+        d.call();
+    }, 900);
+}, 4, 2000).
+
 test('Model init', function(d) {
     window.User = Model({
         table: 'users',
@@ -405,7 +448,7 @@ test('Model init', function(d) {
             title     : 'TEXT',
             comment   : 'TEXT',
             search    : 'TEXT',
-            date      : 'TIMESTAMP NOT NULL'
+            date      : 'INTEGER NOT NULL'
         }
     });
     User.createTable(function() {
