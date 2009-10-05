@@ -492,13 +492,21 @@
             get: function(key) {
                 return this._data[key];
             },
-            getFieldData: function(priKey) {
+            getFieldData: function() {
                 var data = {};
                 for (var i = 0;  i < klass.columns.length; i++) {
                     var key = klass.columns[i];
-                    if (priKey || !klass.pKeyHash[key]) data[key] = this.get(key);
+                    if (!klass.pKeyHash[key]) data[key] = this.get(key);
                 }
                 return data;
+            },
+            getPrimaryWhere: function() {
+                var where = {};
+                for (var i = 0;  i < klass.primaryKeys.length; i++) {
+                    var key = klass.primaryKeys[i];
+                    where[key] = this.get(key);
+                }
+                return where;
             },
             setAttributes: function(data) {
                 if (data) {
@@ -520,16 +528,17 @@
             },
             save: function(fun) {
                 var d;
+                var self = this;
                 if (this._created) {
-                    var data = this.getFieldData(true);
-                    d = klass.execute(sql.update(klass.table, data));
+                    var data = this.getFieldData();
+                    d = klass.execute(sql.update(klass.table, data, this.getPrimaryWhere()));
                 } else {
-                    var data = this.getFieldData(false);
+                    var data = this.getFieldData();
                     d = klass.execute(sql.insert(klass.table, data));
                 }
-                var self = this;
                 d = d.next(function(res) {
-                    self._updateFromResult(res);
+                    if (!self._created)
+                        self._updateFromResult(res);
                     return self;
                 });
                 if (typeof fun == 'function') return d.next(fun);
