@@ -167,11 +167,27 @@
     extend(SQL, {
         isString: function(obj) {
             return typeof obj === 'string' || obj instanceof String;
-        }
+        },
+        NOT_NULL: "0x01NOTNULL",
+        NULL: null
     });
 
     SQL.prototype = {
-        query: function() {
+        select: function(sources, fields, where, options) {
+            var wheres = this.where(obj);
+            var stmt = 'SELECT ' + fields + ' FROM ' + sources + ' ' + wheres[0];
+            var bind = wheres[1];
+            if (options) {
+                if (options.order)
+                    stmt += ' ORDER BY ' + options.order;
+                if (options.group)
+                    stmt += ' GROUP BY ' + options.group;
+                if (typeof options.limit != 'undefined')
+                    stmt += ' LIMIT ?'; bind.push(parseInt(options.limit));
+                if (typeof options.offset != 'undefined')
+                    stmt += ' OFFSET ?'; bind.push(parseInt(options.offset));
+            }
+            return [stmt, bind];
         },
         where: function(obj) {
             if (SQL.isString(obj)) {
@@ -213,12 +229,13 @@
                         tmp.push(this.holder(key)[0]);
                     }
                     stmt.push('(' + tmp.join(' OR ') + ')');
-                } else if (SQL.isString(val)) {
-                    bind.push(val);
-                    stmt.push(this.holder(key)[0]);
+                // } else if (SQL.isString(val)) {
+                //     bind.push(val);
+                //     stmt.push(this.holder(key)[0]);
                 } else {
                     var r = this.holder(key, val);
-                    bind = bind.concat(r[1]);
+                    if (typeof r[1] != 'undefined')
+                        bind = bind.concat(r[1]);
                     stmt.push(r[0]);
                 }
             }
@@ -228,8 +245,15 @@
             var stmt, bind;
             if (typeof hash == 'undefined') {
                 stmt = key + ' = ?';
+            } else if (hash == null) {
+                stmt = key + ' IS NULL';
+            } else if (hash == SQL.NOT_NULL) {
+                stmt = key + ' IS NOT NULL';
             } else if (SQL.isString(hash)) {
+                stmt = key + ' = ?';
+                bind = [hash];
             } else if (hash instanceof Array) {
+                throw new Error('holder error' + hash);
             } else {
                 var st = [], bind = [];
                 for (var cmp in hash) {
@@ -243,7 +267,7 @@
                 }
             }
             return [stmt, bind];
-        }
+        },
     }
 
     Model = Database.Model = function(schema) {

@@ -110,6 +110,21 @@ test('SQL', function(d) {
         status: 'completed',
     });
 
+    whereOK('WHERE user IS NULL AND status = ?', ['completed'], {
+        user: null,
+        status: 'completed',
+    });
+
+    whereOK('WHERE user IS NULL AND status = ?', ['completed'], {
+        user: SQL.NULL,
+        status: 'completed',
+    });
+
+    whereOK('WHERE user IS NOT NULL AND status = ?', ['completed'], {
+        user: SQL.NOT_NULL,
+        status: 'completed',
+    });
+
     whereOK('WHERE user = ? AND (status = ? OR status = ? OR status = ?)', ['nadeko', 'assigned', 'in-progress', 'pending'], {
         user: 'nadeko',
         status: ['assigned', 'in-progress', 'pending']
@@ -121,7 +136,7 @@ test('SQL', function(d) {
     });
 
     d.call();
-}, 27).
+}, 33).
 
 test("transaction", function(d) {
     return;
