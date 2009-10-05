@@ -457,15 +457,15 @@ test('Model', function(d) {
     }
     var User = Model({
         table: 'users',
-        primaryKeys: ['id'],
+        primaryKeys: ['uid'],
         fields: {
-            'id'         : 'INTEGER PRIMARY KEY',
+            'uid'         : 'INTEGER PRIMARY KEY',
             name         : 'TEXT UNIQUE NOT NULL',
             data         : 'TEXT',
             updated_at   : 'INTEGER'
         }
     });
-    is(User.columns, ['id', 'name', 'data', 'updated_at']);
+    is(User.columns, ['uid', 'name', 'data', 'updated_at']);
     Database.debugMessage = true;
     var db = new Database('testuserdb');
     User.__defineGetter__('database', function() { return db; });
@@ -477,13 +477,31 @@ test('Model', function(d) {
             var u = new User({
                 name: 'nadeko'
             });
-            u.save(function(res) {
-                p(res);
-                d.call();
+            equals(u.uid, undefined, 'uid');
+            equals(u.name, 'nadeko', 'name');
+            u.save(function() {
+                equals(u.uid, 1, 'uid');
+                equals(u.name, 'nadeko', 'name');
+                var u2 = new User({
+                    name: 'nadeko'
+                });
+                u2.save().next(function(r) {
+                    ok(false, 'don"t call this');
+                }).error(function(e) {
+                    ok(true, 'name is UNIQUE (ok)');
+                    var u3 = new User({
+                        name: 'yuno'
+                    });
+                    u3.save(function() {
+                        equals(u3.uid, 2, 'uid');
+                        equals(u3.name, 'yuno', 'name');
+                        d.call();
+                    });
+                });
             });
         });
     });
-}, 3, 3000).
+}, 10, 3000).
 
 test('3', function(d) {
     // d.call();

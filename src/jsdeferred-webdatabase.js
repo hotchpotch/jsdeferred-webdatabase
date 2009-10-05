@@ -377,7 +377,7 @@
         };
 
         var sql = klass.sql = new SQL();
-        var table = schema.table;
+        klass.table = schema.table;
 
         extend(klass, {
             setColumns: function() {
@@ -386,6 +386,19 @@
                 for (var key in f) {
                     klass._columns.push(key);
                 }
+            },
+            defineGetterSetters: function() {
+                for (var i = 0;  i < klass.columns.length; i++) {
+                    klass.defineGetterSetter(klass.columns[i]);
+                }
+            },
+            defineGetterSetter: function(key) {
+                klass.prototype.__defineSetter__(key, function(value) {
+                    this.set(key, value);
+                });
+                klass.prototype.__defineGetter__(key, function() {
+                    return this.get(key);
+                });
             },
             setPrimaryKeysHash: function() {
                 klass.pKeyHash = {};
@@ -468,19 +481,29 @@
                     }
                 }
             },
-            _insertOrUpdate: function() {
-                var data = this.getFieldData(false);
-                if (this._created) {
-                } else {
-                    return sql.insert(klass.table, data);
+            reload: function() {
+            },
+            _updateFromResult: function(res) {
+                if (res.insertId && klass.primaryKeys.length == 1) {
+                    this.set(klass.primaryKeys[0], res.insertId);
+                    this._created = true;
                 }
             },
             save: function(fun) {
-                var d = this._insertOrUpdate();
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
+                var data = this.getFieldData(false);
+                if (this._created) {
+                } else {
+                }
+                var d = this.execute(sql.insert(klass.table, data));
+                var self = this;
+                return d.next(function(res) {
+                    self._updateFromResult(res);
+                    p(self.uid);
+                    return self;
+                }).next(fun);
             }
         }
+        klass.defineGetterSetters();
 
         return klass;
     }
