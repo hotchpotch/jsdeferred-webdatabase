@@ -293,8 +293,6 @@ test('SQL where', function(d) {
 
 test('SQL Select', function(d) {
     var sql = new SQL({});
-    var res;
-    var db = new Database;
 
     var selectOK = function(stmt, bind, table, fields, where, options) {
         var wRes = sql.select(table, fields, where, options);
@@ -340,7 +338,27 @@ test('SQL Select', function(d) {
     setTimeout(function() {
         d.call();
     }, 2500);
-}, 15, 5000).
+}, 15, 3000).
+
+test('SQL Insert/Update', function(d) {
+    var sql = new SQL({});
+
+    var insertOK = function(stmt, bind, table, data) {
+        var wRes = sql.insert(table, data);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+        syntaxCheck(wRes[0], wRes[1]);
+    }
+
+    insertOK('insert into table1 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table1', {
+        user: 'nadeko',
+        status: 'completed',
+    });
+
+    setTimeout(function() {
+        d.call();
+    }, 2500);
+}, 3, 3000).
 
 test('Model init', function(d) {
     window.User = Model({

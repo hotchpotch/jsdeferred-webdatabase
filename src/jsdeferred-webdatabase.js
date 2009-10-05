@@ -205,6 +205,16 @@
             }
             return [stmt, bind];
         },
+        insert: function(table, data) {
+            var keys = [], bind = [], values = [];
+            for (var key in data) {
+                keys.push(key);
+                bind.push(data[key]);
+                values.push('?');
+            }
+            var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
+            return [stmt, bind];
+        },
         where: function(obj) {
             if (SQL.isString(obj)) {
                 return [obj, null];
