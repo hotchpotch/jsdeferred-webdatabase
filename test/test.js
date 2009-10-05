@@ -165,8 +165,10 @@ test('SQL Select', function(d) {
         var wRes = sql.select(table, fields, where, options);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
-        db.transaction(function(tx) {
-            tx.execute(wRes[0], wRes[1]).
+        db.execute(wRes[0], wRes[1]).
+                next(function(aa) {
+                    ok(false, 'don"t call this');
+                }).
                 error(function(er) {
                     // Syntax Error Check
                     var sqlerror = er[0];
@@ -176,7 +178,6 @@ test('SQL Select', function(d) {
                         ok(true, 'syntax OK: ' +  wRes[0] + ' (' + sqlerror.message + ')');
                     }
                 });
-        });
     }
 
     selectOK('select * from table1 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table1', '*', ['user = :user AND status = :status', {
@@ -307,7 +308,6 @@ test("execute", function(d) {
                   equals(result.rows.item(2).name, 'third');
               });
         })
-        /*
         ,
         db.execute(
             'drop table if exists `Test3`'
@@ -328,11 +328,10 @@ test("execute", function(d) {
             });
             return d;
         })
-        */
     ]).next(function() {
         d.call();
     });
-}, 17, 3000).
+}, 24, 3000).
 
 test('Model init', function(d) {
     window.User = Model({

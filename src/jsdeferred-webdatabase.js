@@ -52,7 +52,7 @@
             var options = this.options;
             return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
         }
-        /*,
+        ,
         execute: function(sql, args) {
             var self = this;
             return next(function() {
@@ -88,7 +88,7 @@
                 return d;
             });
         }
-        */
+        
     }
 
     Transaction = Database.Transaction = function(tx) {
@@ -245,9 +245,6 @@
                         tmp.push(this.holder(key)[0]);
                     }
                     stmt.push('(' + tmp.join(' OR ') + ')');
-                // } else if (SQL.isString(val)) {
-                //     bind.push(val);
-                //     stmt.push(this.holder(key)[0]);
                 } else {
                     var r = this.holder(key, val);
                     if (typeof r[1] != 'undefined')
