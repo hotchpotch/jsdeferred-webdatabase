@@ -98,10 +98,24 @@ test('SQL where', function(d) {
     holderOK('status != ?', ['completed'], 'status', {'!=': 'completed'});
     holderOK('(date < ?) OR (date > ?)', [10, 100], 'date', {'<': '10', '>': 100});
 
+    var db = new Database;
     var whereOK = function(stmt, bind, obj) {
         var wRes = sql.where(obj);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
+        db.execute('select * from table1 ' + wRes[0], wRes[1]).
+                next(function(aa) {
+                    ok(false, 'don"t call this');
+                }).
+                error(function(er) {
+                    // Syntax Error Check
+                    var sqlerror = er[0];
+                    if (sqlerror.message.indexOf('syntax error') != -1) {
+                        ok(false, 'web database syntax fail: ' + wRes[0] + ' (' + sqlerror.message + ')');
+                    } else {
+                        ok(true, 'web database syntax OK: ' +  wRes[0] + ' (' + sqlerror.message + ')');
+                    }
+                });
     }
     var sTmp = "WHERE user = 'nadeko' AND status = 'completed'";
     whereOK(sTmp, null, sTmp);
@@ -153,8 +167,10 @@ test('SQL where', function(d) {
         status: {'!=': 'completed'}
     });
 
+    setTimeout(function() {
     d.call();
-}, 33).
+    }, 3000);
+}, 45, 3500).
 
 test('SQL Select', function(d) {
     var sql = new SQL({});
@@ -331,7 +347,7 @@ test("execute", function(d) {
     ]).next(function() {
         d.call();
     });
-}, 24, 3000).
+}, 21, 3000).
 
 test('Model init', function(d) {
     window.User = Model({
