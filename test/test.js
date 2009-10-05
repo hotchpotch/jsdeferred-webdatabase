@@ -1,6 +1,10 @@
 
 Deferred.define();
 
+var p = function() {
+    console.log(Array.prototype.slice.call(arguments, 0));
+}
+
 Deferred.test = function(name, t, count, wait) {
     var d = new Deferred();
     var search = location.search;
@@ -277,6 +281,9 @@ test("execute", function(d) {
             tx.
               execute('create table if not exists `Test`').
               execute(eSql).
+              next(function(res) {
+                  ok(false, 'don"t call this');
+              }).
               error(function(e) {
                   ok(e[0], 'get transaction errorback');
                   equals(e[1], eSql);

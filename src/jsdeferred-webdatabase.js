@@ -44,8 +44,8 @@
             db.transaction(function(tx) {
                 var t = new Transaction(tx);
                 callback(t);
-                t.commit().call();
-            }, function(e) { d.fail(e); }, function(e) { d.call(e); });
+                return t.commit();
+            }, function(e) { p(e);d.fail(e); }, function(e) { d.call(e); });
             return d;
         },
         getDatabase: function() {
@@ -109,7 +109,13 @@
             var self = this;
             var que = this.queue.shift();
             if (que[0] == 'deferred') {
-                return d[que[1]].apply(d, que[2]);
+                d = d[que[1]].apply(d, que[2]);
+                while (this.queue.length && this.queue[0][0] == 'deferred') {
+                    // 次も deferred ならここで繋げておかずに return を返すと進行してしまう
+                    que = this.queue.shift();
+                    d = d[que[1]].apply(d, que[2]);
+                }
+                return d;
             } else if (que[0] == 'sql') {
                 var sql = que[1], args = que[2];
                 if (typeof sql == 'function') {
