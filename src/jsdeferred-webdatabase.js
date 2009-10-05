@@ -190,6 +190,25 @@
             var stmt = 'SELECT ' + fields + ' FROM ' + table + ' ' + wheres[0];
             var bind = wheres[1];
             if (options) {
+                var opt = this.optionsToSQL(options);
+                stmt += opt[0];
+                bind = bind.concat(opt[1]);
+            }
+            return [stmt, bind];
+        },
+        insert: function(table, data) {
+            var keys = [], bind = [], values = [];
+            for (var key in data) {
+                keys.push(key);
+                bind.push(data[key]);
+                values.push('?');
+            }
+            var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
+            return [stmt, bind];
+        },
+        optionsToSQL: function(options) {
+            var stmt = '', bind = [];
+            if (options) {
                 if (options.order) {
                     stmt += ' ORDER BY ' + options.order;
                 }
@@ -203,16 +222,6 @@
                     stmt += ' OFFSET ?'; bind.push(parseInt(options.offset));
                 }
             }
-            return [stmt, bind];
-        },
-        insert: function(table, data) {
-            var keys = [], bind = [], values = [];
-            for (var key in data) {
-                keys.push(key);
-                bind.push(data[key]);
-                values.push('?');
-            }
-            var stmt = 'INSERT INTO ' + table + ' (' + keys.join(', ') + ') VALUES (' + values.join(', ') + ')';
             return [stmt, bind];
         },
         where: function(obj) {

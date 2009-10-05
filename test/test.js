@@ -350,6 +350,13 @@ test('SQL Insert/Update', function(d) {
         syntaxCheck(wRes[0], wRes[1]);
     }
 
+    var updateOK = function(stmt, bind, table, data, where, options) {
+        var wRes = sql.update(table, where, options);
+        equals(stmt.toUpperCase(), wRes[0].toUpperCase());
+        equals(String(bind), String(wRes[1]));
+        syntaxCheck(wRes[0], wRes[1]);
+    }
+
     insertOK('insert into table1 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table1', {
         user: 'nadeko',
         status: 'completed',
