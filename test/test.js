@@ -1,8 +1,17 @@
 
 Deferred.define();
+Deferred.register('e', function() {
+    return this.error(function(e) {
+        console.log(e)
+    });
+});
 
 var p = function() {
     console.log(Array.prototype.slice.call(arguments, 0));
+}
+
+var is = function(a, b, mes) {
+    equals(a.toString(), b.toString(), mes);
 }
 
 Deferred.test = function(name, t, count, wait) {
@@ -454,9 +463,6 @@ test('SQL Tables', function(d) {
 }, 6, 2000).
 
 test('Model', function(d) {
-    var is = function(a, b, mes) {
-        equals(a.toString(), b.toString(), mes);
-    }
     var User = Model({
         table: 'users',
         primaryKeys: ['uid'],
@@ -468,7 +474,7 @@ test('Model', function(d) {
         }
     });
     is(User.columns, ['uid', 'name', 'data', 'updated_at']);
-    Database.debugMessage = true;
+    // Database.debugMessage = true;
     var db = new Database('testuserdb');
     User.__defineGetter__('database', function() { return db; });
     User.initialize().next(function() {
@@ -525,12 +531,59 @@ test('Model', function(d) {
     });
 }, 18, 3000).
 
-test('3', function(d) {
-    // d.call();
-}).
+test('ModelOther', function(d) {
+    var User = Model({
+        table: 'users',
+        primaryKeys: ['uid'],
+        fields: {
+            'uid'        : 'INTEGER PRIMARY KEY',
+            name         : 'TEXT UNIQUE NOT NULL',
+            other        : 'TEXT',
+            num          : 'INTEGER',
+            data         : 'TEXT',
+            timestamp    : 'INTEGER'
+        }
+    });
+    Database.debugMessage = true;
+    var db = new Database('testuserdb2');
+    User.__defineGetter__('database', function() { return db; });
+    User.proxyColumns({
+        timestamp  : 'Date',
+        data       : 'JSON'
+    });
+    User.beforeSave = function(user) {
+        ok(user, 'before-save');
+        user.other = 'hogehoge';
+    }
+    User.afterSave = function(user) {
+        ok(user, 'afterSave');
+    }
+    User.dropTable().next(User.initialize).next(function() {
+        var date = new Date(1254816382000);
+        var u = new User({
+            name: 'yuno',
+            timestamp: date,
+        });
+        is(u.timestamp, date);
+        is(u.get('timestamp'), date.getTime());
+        var date2epoch = 1254816383000;
+        var date2 = new Date(date2epoch);
+        u.timestamp = date2;
+        is(u.get('timestamp'), date2epoch);
+        /*
+        ok(!u.data);
+        u.data = {'hoge': 'huga'};
+        is(u.data.hoge, 'huga');
+        */
+        u.save().next(function() {
+            is(u.other, 'hogehoge');
+            d.call();
+        });
+    }).error(function(e) { console.log(e) });
+}, 6, 1000).
 
 test('finished', function(d) {
-    ok(true, 'finished');
+    ok(true, 'finished!!!');
     d.call();
 }).
 

@@ -371,11 +371,11 @@
     }
 
     Model = Database.Model = function(schema) {
-        var klass = function(data) {
+        var klass = function(data, raw) {
             if (!data) data = {};
             this._klass = klass;
             this._data = {};
-            this.setAttributes(data);
+            this.setAttributes(data, raw);
             if (data._created) {
                 this._created = data._created;
             }
@@ -384,14 +384,38 @@
 
         var sql = klass.sql = new SQL();
         klass.table = schema.table;
+        klass._columnProxy = {};
 
         extend(klass, {
+            proxyColumns: function(hash) {
+                for (var key in hash) {
+                    if (klass.hasColumn(key)) {
+                        var val = hash[key];
+                        if (typeof val === 'string' || val instanceof String) {
+                            if (Model.DEFAULT_PROXY_COLUMNS[val]) {
+                                klass._columnProxy[key] = Model.DEFAULT_PROXY_COLUMNS[val];
+                            } else {
+                                throw new Error("Model.DEFAULT_PROXY_COLUMNS don't have " + val);
+                            }
+                        } else {
+                            if (val.setter && val.getter) {
+                                klass._columnProxy[key] = val;
+                            } else {
+                                throw new Error("required setter/getter: " + key);
+                            }
+                        }
+                    }
+                }
+            },
             setColumns: function() {
                 klass._columns = [];
                 var f = klass._fields;
                 for (var key in f) {
                     klass._columns.push(key);
                 }
+            },
+            hasColumn: function(name) {
+                return !!klass.fields[name];
             },
             defineGetterSetters: function() {
                 for (var i = 0;  i < klass.columns.length; i++) {
@@ -400,10 +424,10 @@
             },
             defineGetterSetter: function(key) {
                 klass.prototype.__defineSetter__(key, function(value) {
-                    this.set(key, value);
+                    this.setByProxy(key, value);
                 });
                 klass.prototype.__defineGetter__(key, function() {
-                    return this.get(key);
+                    return this.getByProxy(key);
                 });
             },
             setPrimaryKeysHash: function() {
@@ -557,6 +581,20 @@
         if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
 
         klass.prototype = {
+            setByProxy: function(key, value) {
+                if (klass._columnProxy[key]) {
+                    value = klass._columnProxy[key].setter(value);
+                }
+                this.set(key, value);
+            },
+            getByProxy: function(key) {
+                var val = this.get(key);
+                if (klass._columnProxy[key]) {
+                    return klass._columnProxy[key].getter(val);
+                } else {
+                    return val;
+                }
+            },
             set: function(key, value) {
                 this._data[key] = value;
             },
@@ -582,12 +620,16 @@
                 }
                 return where;
             },
-            setAttributes: function(data) {
+            setAttributes: function(data, raw) {
                 if (data) {
                     for (var i = 0;  i < klass.columns.length; i++) {
                         var key = klass.columns[i];
                         if (typeof data[key] != 'undefined') {
-                            this.set(key, data[key]);
+                            if (raw) {
+                                this.set(key, data[key]);
+                            } else {
+                                this.setByProxy(key, data[key]);
+                            }
                         }
                     }
                 }
@@ -609,6 +651,7 @@
             save: function() {
                 var d;
                 var self = this;
+                if (klass.beforeSave) klass.beforeSave(self);
                 if (this._created) {
                     var data = this.getFieldData();
                     d = klass.execute(sql.update(klass.table, data, this.getPrimaryWhere()));
@@ -619,6 +662,7 @@
                 return d.next(function(res) {
                     if (!self._created)
                         self._updateFromResult(res);
+                    if (klass.afterSave) klass.afterSave(self);
                     return self;
                 });
             }
@@ -627,6 +671,33 @@
 
         return klass;
     }
+
+    Model.DEFAULT_PROXY_COLUMNS = {
+        Date: {
+            getter: function(val) {
+                if (typeof val == 'undefined') {
+                    return;
+                } else {
+                    return new Date(val);
+                }
+            },
+            setter: function(val) {
+                return val.getTime();
+            }
+        },
+        JSON: {
+            getter: function(val) {
+                if (typeof val == 'undefined') {
+                    return;
+                } else {
+                    return JSON.parse(val);
+                }
+            },
+            setter: function(val) {
+                return JSON.stringify(val);
+            }
+        }
+    };
 
 })();
 
