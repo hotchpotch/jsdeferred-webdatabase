@@ -477,7 +477,22 @@
             },
             resultSet: function(res, type) {
                 // default
-                return klass.resultSetInstance(res);
+                type = (type || '').toUpperCase();
+                if (type == 'RAW') {
+                    return res;
+                } else if (type == 'ARRAY') {
+                    return klass.resultSetArray(res);
+                } else {
+                    return klass.resultSetInstance(res);
+                }
+            },
+            resultSetArray: function(res) {
+                var result = [], rows = res.rows;
+                var len = rows.length;
+                for (var i = 0;  i < len; i++) {
+                    result.push(rows.item(i));
+                }
+                return result;
             },
             resultSetInstance: function(res) {
                 var result = [], rows = res.rows;
