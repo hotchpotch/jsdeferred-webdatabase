@@ -4,6 +4,7 @@
 
     var $D = Deferred;
     var $F = function() {};
+    var $K = function(x) { return function() { return x } };
     var Database, Transaction, SQL, Model;
 
     var p = function() {
@@ -490,8 +491,11 @@
                 return d;
             },
             afterCreateTable: function(r) {
-                if (!this._infoCache) klass.updateInfo().call();
-                return r;
+                if (!this._infoCache) {
+                    return klass.updateInfo().next($K(r));
+                } else {
+                    return $D.next($K(r));
+                }
             },
             updateInfo: function() {
                 return klass.execute(sql.select('sqlite_master', '*', {

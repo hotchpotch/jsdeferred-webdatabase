@@ -242,7 +242,7 @@ test('SQL where', function(d) {
         var wRes = sql.where(obj);
         equals(stmt.toUpperCase(), wRes[0].toUpperCase());
         equals(String(bind), String(wRes[1]));
-        syntaxCheck('select * from table1 ' + wRes[0], wRes[1]);
+        syntaxCheck('select * from table3 ' + wRes[0], wRes[1]);
     }
     var sTmp = "WHERE user = 'nadeko' AND status = 'completed'";
     whereOK(sTmp, null, sTmp);
@@ -313,35 +313,35 @@ test('SQL Select', function(d) {
         syntaxCheck(wRes[0], wRes[1]);
     }
 
-    selectOK('select * from table1', [], 'table1');
+    selectOK('select * from table3', [], 'table3');
 
-    selectOK('select * from table1 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table1', '*', ['user = :user AND status = :status', {
+    selectOK('select * from table3 WHERE user = ? AND status = ?', ['nadeko', 'completed'], 'table3', '*', ['user = :user AND status = :status', {
         user: 'nadeko',
         status: 'completed',
     }]);
 
-    selectOK('select * from table1 WHERE user IS NULL AND status = ? LIMIT ?', ['completed', 1], 'table1', '*', {
+    selectOK('select * from table3 WHERE user IS NULL AND status = ? LIMIT ?', ['completed', 1], 'table3', '*', {
         user: null,
         status: 'completed',
     }, {
         limit: 1
     });
 
-    selectOK('select * from table1 WHERE user IS NULL AND status = ? ORDER BY user desc', ['completed'], 'table1', '*', {
+    selectOK('select * from table3 WHERE user IS NULL AND status = ? ORDER BY user desc', ['completed'], 'table3', '*', {
         user: null,
         status: 'completed',
     }, {
         order: 'user desc'
     });
 
-    selectOK('select * from table1 WHERE user IS NULL AND status = ? GROUP BY age', ['completed'], 'table1', '*', {
+    selectOK('select * from table3 WHERE user IS NULL AND status = ? GROUP BY age', ['completed'], 'table3', '*', {
         user: null,
         status: 'completed',
     }, {
         group: 'age'
     });
 
-    selectOK('select * from table1 WHERE user IS NULL AND status = ? LIMIT ? OFFSET ?', ['completed', 20, 10], 'table1', '*', {
+    selectOK('select * from table3 WHERE user IS NULL AND status = ? LIMIT ? OFFSET ?', ['completed', 20, 10], 'table3', '*', {
         user: null,
         status: 'completed',
     }, {
@@ -378,38 +378,38 @@ test('SQL Insert/Update/Delete', function(d) {
         syntaxCheck(wRes[0], wRes[1]);
     }
 
-    insertOK('insert into table1 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table1', {
+    insertOK('insert into table3 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table3', {
         user: 'nadeko',
         status: 'completed',
     });
 
-    insertOK('insert into table1 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table1', {
-        user: 'nadeko',
-        status: 'completed',
-        foo: undefined,
-    });
-
-    updateOK('update table1 SET user = ?, status = ?', ['nadeko', 'completed'], 'table1', {
-        user: 'nadeko',
-        status: 'completed',
-    });
-
-    updateOK('update table1 SET user = ?, status = ?', ['nadeko', 'completed'], 'table1', {
+    insertOK('insert into table3 (user, status) values (?, ?)', ['nadeko', 'completed'], 'table3', {
         user: 'nadeko',
         status: 'completed',
         foo: undefined,
     });
 
-    updateOK('update table1 SET user = ?, status = ? WHERE id = ?', ['nadeko', 'completed', 3], 'table1', {
+    updateOK('update table3 SET user = ?, status = ?', ['nadeko', 'completed'], 'table3', {
+        user: 'nadeko',
+        status: 'completed',
+    });
+
+    updateOK('update table3 SET user = ?, status = ?', ['nadeko', 'completed'], 'table3', {
+        user: 'nadeko',
+        status: 'completed',
+        foo: undefined,
+    });
+
+    updateOK('update table3 SET user = ?, status = ? WHERE id = ?', ['nadeko', 'completed', 3], 'table3', {
         user: 'nadeko',
         status: 'completed',
     }, {
         id: 3
     });
 
-    deleteOK('delete from table1', [], 'table1');
+    deleteOK('delete from table3', [], 'table3');
 
-    deleteOK('delete from table1 WHERE id = ?', [3], 'table1', {
+    deleteOK('delete from table3 WHERE id = ?', [3], 'table3', {
         id: 3
     });
 
@@ -426,7 +426,7 @@ test('SQL Tables', function(d) {
         equals(wRes, stmt);
         syntaxCheck(wRes, [], true);
     }
-    dropOK('DROP TABLE IF EXISTS table1', 'table1');
+    dropOK('DROP TABLE IF EXISTS table2', 'table2');
 
     var createOK = function(stmt, table, fields, force) {
         var wRes = sql.create(table, fields, force);
@@ -445,9 +445,9 @@ test('SQL Tables', function(d) {
     for (var key in fields) {
         res.push(key + ' ' + fields[key]);
     }
-    createOK('CREATE TABLE IF NOT EXISTS table1 (id INTEGER PRIMARY KEY, url TEXT UNIQUE NOT NULL, search TEXT, data INTEGER NOT NULL)', 'table1', fields);
+    createOK('CREATE TABLE IF NOT EXISTS table2 (id INTEGER PRIMARY KEY, url TEXT UNIQUE NOT NULL, search TEXT, data INTEGER NOT NULL)', 'table2', fields);
 
-    dropOK('DROP TABLE IF EXISTS table1', 'table1');
+    dropOK('DROP TABLE IF EXISTS table2', 'table2');
     setTimeout(function() {
         d.call();
     }, 900);
@@ -474,9 +474,8 @@ test('Model', function(d) {
     User.dropTable(function() {
         ok(true, 'drop table');
     }).next(function() {
-        User.createTable(function() {
-
-            ok(true, 'create table');
+        User.createTable(function(r) {
+            ok(User.getInfo('name'), 'create table');
             var u = new User({
                 name: 'nadek'
             });
