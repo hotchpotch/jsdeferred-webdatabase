@@ -435,15 +435,29 @@
             get database () {
                 return klass._db;
             },
+            getInfo: function(name) {
+                if (klass._infoCache) {
+                    return klass._infoCache[name];
+                }
+                return;
+            },
+            isTableCreated: function() {
+                if (klass.getInfo(name)) {
+                    return $D.next(function() {
+                        return true;
+                    });
+                } else {
+                    return klass.updateInfo().next(function() {
+                        return klass.getInfo(name) ? true : false;
+                    });
+                }
+            },
             execute: function(sql) {
                 if (sql instanceof Array) {
                     return klass.database.execute(sql[0], sql[1]);
                 } else {
                     throw new Error ('execute(stmt, bind');
                 }
-            },
-            bindSQLexecute: function() {
-                return klass.database.execute();
             },
             find: function(options) {
                 var d = klass.execute(klass.select(options.where, options.fields, options));
@@ -471,15 +485,37 @@
             },
             createTable: function(fun) {
                 var d = klass.database.execute(sql.create(klass.table, klass.fields));
+                d = d.next(klass.afterCreateTable);
                 if (typeof fun == 'function') return d.next(fun);
                 return d;
             },
+            afterCreateTable: function(r) {
+                if (!this._infoCache) klass.updateInfo().call();
+                return r;
+            },
+            updateInfo: function() {
+                return klass.execute(sql.select('sqlite_master', '*', {
+                    type: 'table',
+                    name: klass.table
+                })).next(function(res) {
+                    if (res.rows && res.rows.length) {
+                        var item = res.rows.item(0);
+                        klass._infoCache = item;
+                    }
+                });
+            },
             dropTable: function(fun) {
                 var d = klass.database.execute(sql.drop(klass.table));
+                d = d.next(klass.afterDropTable);
                 if (typeof fun == 'function') return d.next(fun);
                 return d;
+            },
+            afterDropTable: function(res) {
+                delete klass._infoCache;
+                return res;
             }
         });
+
         klass.fields = schema.fields;
         klass.primaryKeys = schema.primaryKeys;
         if (!schema.primaryKeys) throw new Error('primaryKeys required.');
@@ -505,6 +541,9 @@
                 for (var i = 0;  i < klass.primaryKeys.length; i++) {
                     var key = klass.primaryKeys[i];
                     where[key] = this.get(key);
+                    if (typeof where[key] == 'undefined') {
+                        throw new Error('primary keys values is required.' +  key);
+                    }
                 }
                 return where;
             },

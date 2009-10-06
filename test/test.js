@@ -475,6 +475,7 @@ test('Model', function(d) {
         ok(true, 'drop table');
     }).next(function() {
         User.createTable(function() {
+
             ok(true, 'create table');
             var u = new User({
                 name: 'nadek'
