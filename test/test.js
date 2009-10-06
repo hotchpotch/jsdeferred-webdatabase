@@ -477,57 +477,53 @@ test('Model', function(d) {
     // Database.debugMessage = true;
     var db = new Database('testuserdb');
     User.__defineGetter__('database', function() { return db; });
-    User.initialize().next(function() {
-        User.dropTable().next(function() {
-            ok(true, 'drop table');
-        }).next(function() {
-            User.createTable().next(function(r) {
-                ok(User.getInfo('name'), 'create table');
-                var u = new User({
-                    name: 'nadek'
-                });
-                equals(u.uid, undefined, 'uid');
-                equals(u.name, 'nadek', 'name');
-                u.save().next(function() {
-                    equals(u.uid, 1, 'uid');
-                    equals(u.name, 'nadek', 'name');
-                    u.name = 'nadeko';
-                    u.save().next(function(r) {
-                        equals(r.name, 'nadeko', 'update name');
-                        equals(r.uid, 1, 'uid');
-                        var u2 = new User({
-                            name: 'nadeko'
-                        });
-                        u2.save().next(function(r) {
-                            ok(false, 'don"t call this');
-                        }).error(function(e) {
-                            ok(true, 'name is UNIQUE (ok)');
-                            var u3 = new User({
-                                name: 'yuno'
-                            });
-                            u3.save().next(User.count).next(function(c) {
-                                equals(c, 2, 'count total');
-                                equals(u3.uid, 2, 'uid');
-                                equals(u3.name, 'yuno', 'name');
-                                User.find({
-                                    where: { name: 'yuno' }
-                                }).next(function(res) {
-                                    ok(res.length == 1)
-                                    var r = res[0];
-                                    ok(r instanceof User);
-                                    equals(r.uid, 2);
-                                    equals(r.name, 'yuno');
-                                    r.remove().next(User.count).next(function(c) {
-                                        equals(c, 1, 'count total');
-                                        d.call();
-                                    });
-                                });
-                            });
-                        });
-                    }); // u.save
-                }); // u.save
-            });
+    User.initialize().next(User.dropTable).next(function() {
+        ok(true, 'drop table');
+    }).next(User.createTable).next(function(r) {
+        ok(User.getInfo('name'), 'create table');
+        var u = new User({
+            name: 'nadek'
         });
+        equals(u.uid, undefined, 'uid');
+        equals(u.name, 'nadek', 'name');
+        u.save().next(function() {
+            equals(u.uid, 1, 'uid');
+            equals(u.name, 'nadek', 'name');
+            u.name = 'nadeko';
+            u.save().next(function(r) {
+                equals(r.name, 'nadeko', 'update name');
+                equals(r.uid, 1, 'uid');
+                var u2 = new User({
+                    name: 'nadeko'
+                });
+                u2.save().next(function(r) {
+                    ok(false, 'don"t call this');
+                }).error(function(e) {
+                    ok(true, 'name is UNIQUE (ok)');
+                    var u3 = new User({
+                        name: 'yuno'
+                    });
+                    u3.save().next(User.count).next(function(c) {
+                        equals(c, 2, 'count total');
+                        equals(u3.uid, 2, 'uid');
+                        equals(u3.name, 'yuno', 'name');
+                        User.find({
+                            where: { name: 'yuno' }
+                        }).next(function(res) {
+                            ok(res.length == 1)
+                            var r = res[0];
+                            ok(r instanceof User);
+                            equals(r.uid, 2);
+                            equals(r.name, 'yuno');
+                            r.remove().next(User.count).next(function(c) {
+                                equals(c, 1, 'count total');
+                                d.call();
+                            });
+                        });
+                    });
+                });
+            }); // u.save
+        }); // u.save
     });
 }, 18, 3000).
 
@@ -544,7 +540,7 @@ test('ModelOther', function(d) {
             timestamp    : 'INTEGER'
         }
     });
-    Database.debugMessage = true;
+    // Database.debugMessage = true;
     var db = new Database('testuserdb2');
     User.__defineGetter__('database', function() { return db; });
     User.proxyColumns({
