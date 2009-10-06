@@ -248,7 +248,7 @@
             */
             return [stmt, bind];
         },
-        'deleteSql': function(table, where) {
+        deleteSql: function(table, where) {
             var wheres, bind = [];
             if (where) wheres = this.where(where);
             var stmt = 'DELETE FROM ' + table;
@@ -461,7 +461,7 @@
                 }
             },
             find: function(options) {
-                var d = klass.execute(klass.select(options.where, options.fields, options));
+                var d = klass.execute(klass.select(options.fields, options.where, options));
                 d = d.next(function(res) {
                     return klass.resultSet(res, options.resultType);
                 });
@@ -481,8 +481,11 @@
                 }
                 return result;
             },
-            select: function(where, fields, options) {
+            select: function(fields, where, options) {
                 return sql.select(klass.table, fields, where, options);
+            },
+            deleteSql: function(where) {
+                return sql.deleteSql(klass.table, where);
             },
             createTable: function(fun) {
                 var d = klass.database.execute(sql.create(klass.table, klass.fields));
@@ -517,12 +520,21 @@
             afterDropTable: function(res) {
                 delete klass._infoCache;
                 return res;
+            },
+            count: function() {
+                return klass.execute(klass.select('count(*) AS total')).next(function(res) {
+                    if (res.rows && res.rows.length) {
+                        var item = res.rows.item(0);
+                        return item.total;
+                    }
+                    return 0;
+                });
             }
         });
 
         klass.fields = schema.fields;
         klass.primaryKeys = schema.primaryKeys;
-        if (!schema.primaryKeys) throw new Error('primaryKeys required.');
+        if (!schema.primaryKeys && !schema.primaryKeys.length) throw new Error('primaryKeys required.');
         if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
 
         klass.prototype = {
@@ -568,6 +580,14 @@
                     this.set(klass.primaryKeys[0], res.insertId);
                     this._created = true;
                 }
+            },
+            remove: function(fun) {
+                if (!this._created) {
+                    throw new Error('this row not created');
+                }
+                var d = klass.execute(sql.deleteSql(klass.table, this.getPrimaryWhere()));
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
             },
             save: function(fun) {
                 var d;

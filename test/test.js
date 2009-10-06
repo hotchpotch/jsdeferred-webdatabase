@@ -498,7 +498,8 @@ test('Model', function(d) {
                         var u3 = new User({
                             name: 'yuno'
                         });
-                        u3.save(function() {
+                        u3.save().next(User.count).next(function(c) {
+                            equals(c, 2, 'count total');
                             equals(u3.uid, 2, 'uid');
                             equals(u3.name, 'yuno', 'name');
                             User.find({
@@ -509,15 +510,18 @@ test('Model', function(d) {
                                 ok(r instanceof User);
                                 equals(r.uid, 2);
                                 equals(r.name, 'yuno');
+                                r.remove().next(User.count).next(function(c) {
+                                    equals(c, 1, 'count total');
+                                    d.call();
+                                });
                             });
-                            d.call();
                         });
                     });
                 }); // u.save
             }); // u.save
         });
     });
-}, 16, 3000).
+}, 18, 3000).
 
 test('3', function(d) {
     // d.call();
