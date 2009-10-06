@@ -436,6 +436,17 @@
             get database () {
                 return klass._db;
             },
+            initialize: function(fun) {
+                var d = klass.isTableCreated().next(function(res) {
+                    if (res) {
+                        return new $D;
+                    } else {
+                        return klass.createTable();
+                    }
+                });
+                if (typeof fun == 'function') return d.next(fun);
+                return d;
+            },
             getInfo: function(name) {
                 if (klass._infoCache) {
                     return klass._infoCache[name];
