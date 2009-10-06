@@ -436,16 +436,14 @@
             get database () {
                 return klass._db;
             },
-            initialize: function(fun) {
-                var d = klass.isTableCreated().next(function(res) {
+            initialize: function() {
+                return klass.isTableCreated().next(function(res) {
                     if (res) {
                         return new $D;
                     } else {
                         return klass.createTable();
                     }
                 });
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
             },
             getInfo: function(name) {
                 if (klass._infoCache) {
@@ -473,10 +471,9 @@
             },
             find: function(options) {
                 var d = klass.execute(klass.select(options.fields, options.where, options));
-                d = d.next(function(res) {
+                return d.next(function(res) {
                     return klass.resultSet(res, options.resultType);
                 });
-                return d;
             },
             resultSet: function(res, type) {
                 // default
@@ -498,11 +495,9 @@
             deleteSql: function(where) {
                 return sql.deleteSql(klass.table, where);
             },
-            createTable: function(fun) {
+            createTable: function() {
                 var d = klass.database.execute(sql.create(klass.table, klass.fields));
-                d = d.next(klass.afterCreateTable);
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
+                return d.next(klass.afterCreateTable);
             },
             afterCreateTable: function(r) {
                 if (!this._infoCache) {
@@ -522,11 +517,9 @@
                     }
                 });
             },
-            dropTable: function(fun) {
+            dropTable: function() {
                 var d = klass.database.execute(sql.drop(klass.table));
-                d = d.next(klass.afterDropTable);
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
+                return d.next(klass.afterDropTable);
             },
             afterDropTable: function(res) {
                 delete klass._infoCache;
@@ -592,15 +585,13 @@
                     this._created = true;
                 }
             },
-            remove: function(fun) {
+            remove: function() {
                 if (!this._created) {
                     throw new Error('this row not created');
                 }
-                var d = klass.execute(sql.deleteSql(klass.table, this.getPrimaryWhere()));
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
+                return klass.execute(sql.deleteSql(klass.table, this.getPrimaryWhere()));
             },
-            save: function(fun) {
+            save: function() {
                 var d;
                 var self = this;
                 if (this._created) {
@@ -610,13 +601,11 @@
                     var data = this.getFieldData();
                     d = klass.execute(sql.insert(klass.table, data));
                 }
-                d = d.next(function(res) {
+                return d.next(function(res) {
                     if (!self._created)
                         self._updateFromResult(res);
                     return self;
                 });
-                if (typeof fun == 'function') return d.next(fun);
-                return d;
             }
         }
         klass.defineGetterSetters();

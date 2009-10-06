@@ -472,21 +472,21 @@ test('Model', function(d) {
     var db = new Database('testuserdb');
     User.__defineGetter__('database', function() { return db; });
     User.initialize().next(function() {
-        User.dropTable(function() {
+        User.dropTable().next(function() {
             ok(true, 'drop table');
         }).next(function() {
-            User.createTable(function(r) {
+            User.createTable().next(function(r) {
                 ok(User.getInfo('name'), 'create table');
                 var u = new User({
                     name: 'nadek'
                 });
                 equals(u.uid, undefined, 'uid');
                 equals(u.name, 'nadek', 'name');
-                u.save(function() {
+                u.save().next(function() {
                     equals(u.uid, 1, 'uid');
                     equals(u.name, 'nadek', 'name');
                     u.name = 'nadeko';
-                    u.save(function(r) {
+                    u.save().next(function(r) {
                         equals(r.name, 'nadeko', 'update name');
                         equals(r.uid, 1, 'uid');
                         var u2 = new User({
