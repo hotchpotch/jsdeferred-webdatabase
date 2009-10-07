@@ -494,9 +494,20 @@
                 }
             },
             find: function(options) {
+                if (!options) options = {};
                 var d = klass.execute(klass.select(options.fields, options.where, options));
                 return d.next(function(res) {
                     return klass.resultSet(res, options.resultType);
+                });
+            },
+            findFirst: function(options) {
+                if (!options) options = {};
+                options.limit = 1;
+                var d = klass.execute(klass.select(options.fields, options.where, options));
+                return d.next(function(res) {
+                    if (!res) return;
+                    var r = klass.resultSet(res);
+                    return r[0];
                 });
             },
             resultSet: function(res, type) {
@@ -574,11 +585,6 @@
                 });
             }
         });
-
-        klass.fields = schema.fields;
-        klass.primaryKeys = schema.primaryKeys;
-        if (!schema.primaryKeys && !schema.primaryKeys.length) throw new Error('primaryKeys required.');
-        if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
 
         klass.prototype = {
             setByProxy: function(key, value) {
@@ -667,6 +673,12 @@
                 });
             }
         }
+
+        klass.fields = schema.fields;
+        klass.primaryKeys = schema.primaryKeys;
+        if (!schema.primaryKeys && !schema.primaryKeys.length) throw new Error('primaryKeys required.');
+        if (!(schema.primaryKeys instanceof Array)) throw new Error('primaryKeys(Array) required.');
+
         klass.defineGetterSetters();
 
         return klass;

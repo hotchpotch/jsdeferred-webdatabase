@@ -1,10 +1,21 @@
 
 Deferred.define();
-Deferred.register('e', function() {
-    return this.error(function(e) {
-        console.log(e)
-    });
-});
+Deferred.prototype._fire = function (okng, value) {
+    var next = "ok";
+    try {
+        value = this.callback[okng].call(this, value);
+    } catch (e) {
+        next  = "ng";
+        if (Deferred.debug) console.error(e);
+        value = e;
+    }
+    if (value instanceof Deferred) {
+        value._next = this._next;
+    } else {
+        if (this._next) this._next._fire(next, value);
+    }
+    return this;
+}
 
 var p = function() {
     console.log(Array.prototype.slice.call(arguments, 0));
@@ -507,17 +518,21 @@ test('Model', function(d) {
                         equals(c, 2, 'count total');
                         equals(u3.uid, 2, 'uid');
                         equals(u3.name, 'yuno', 'name');
-                        User.find({
-                            where: { name: 'yuno' }
-                        }).next(function(res) {
-                            ok(res.length == 1)
-                            var r = res[0];
-                            ok(r instanceof User);
-                            equals(r.uid, 2);
-                            equals(r.name, 'yuno');
-                            r.remove().next(User.count).next(function(c) {
-                                equals(c, 1, 'count total');
-                                d.call();
+                        User.findFirst({order: 'uid asc'}).next(function(fUser) {
+                            equals(fUser.uid, 1);
+                            equals(fUser.name, 'nadeko');
+                            User.find({
+                                where: { name: 'yuno' }
+                            }).next(function(res) {
+                                ok(res.length == 1)
+                                var r = res[0];
+                                ok(r instanceof User);
+                                equals(r.uid, 2);
+                                equals(r.name, 'yuno');
+                                r.remove().next(User.count).next(function(c) {
+                                    equals(c, 1, 'count total');
+                                    d.call();
+                                });
                             });
                         });
                     });
@@ -525,7 +540,7 @@ test('Model', function(d) {
             }); // u.save
         }); // u.save
     });
-}, 18, 3000).
+}, 20, 3000).
 
 test('ModelOther', function(d) {
     var User = Model({
