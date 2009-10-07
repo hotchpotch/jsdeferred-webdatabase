@@ -497,7 +497,9 @@ test('Model', function(d) {
         });
         equals(u.uid, undefined, 'uid');
         equals(u.name, 'nadek', 'name');
-        u.save().next(function() {
+        User.findFirst().next(function(r) {
+            ok(!r, 'findFirst undefined');
+        }).next(function() { return u.save() }).next(function() {
             equals(u.uid, 1, 'uid');
             equals(u.name, 'nadek', 'name');
             u.name = 'nadeko';
@@ -540,7 +542,7 @@ test('Model', function(d) {
             }); // u.save
         }); // u.save
     });
-}, 20, 3000).
+}, 21, 3000).
 
 test('ModelOther', function(d) {
     var User = Model({
