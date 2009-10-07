@@ -1,0 +1,3 @@
+[submodule "modules/sql-abstract-javascript"]
+	path = modules/sql-abstract-javascript
+	url = git://github.com/hotchpotch/sql-abstract-javascript.git
