@@ -182,7 +182,7 @@
     })();
 
     /*-- include SQLAbstract --*/
-    /* rev: b3663d73666e79520f8c9d98edcc1d03aa15cd8b */    
+    /* rev: 615be46aeacd1e9d7a9e349de3a91391d77fcf89 */    
     (function(Global) {
         var p = function() {
             if (typeof console != 'undefined')
@@ -302,10 +302,10 @@
                 }
                 stmt += ' (' + bind.join(', ') + ')';
                 // stmt += ' IF NOT EXISTS ' + table;
-                return stmt;
+                return [stmt, []];
             },
             drop: function(table, force) {
-                return 'DROP TABLE ' + (!force ? 'IF EXISTS ' : '' ) + table;
+                return ['DROP TABLE ' + (!force ? 'IF EXISTS ' : '' ) + table, []];
             },
             where: function(obj) {
                 if (SQLAbstract.isString(obj)) {
