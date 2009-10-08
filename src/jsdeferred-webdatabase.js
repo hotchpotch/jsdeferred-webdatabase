@@ -514,7 +514,7 @@
                 if (sql instanceof Array) {
                     return klass.database.execute(sql[0], sql[1]);
                 } else {
-                    throw new Error ('execute(stmt, bind');
+                    throw new Error('klass execute required([stmt, bind])' + sql);
                 }
             },
             find: function(options) {
@@ -569,8 +569,15 @@
             deleteSql: function(where) {
                 return sql.deleteSql(klass.table, where);
             },
+            destroy: function(where) {
+                if (!where) throw new Error('where args required');
+                return klass.execute(sql.deleteSql(klass.table, where));
+            },
+            destroyAll: function() {
+                return klass.execute(sql.deleteSql(klass.table));
+            },
             createTable: function() {
-                var d = klass.database.execute(sql.create(klass.table, klass.fields));
+                var d = klass.execute(sql.create(klass.table, klass.fields));
                 return d.next(klass.afterCreateTable);
             },
             afterCreateTable: function(r) {
@@ -591,8 +598,8 @@
                     }
                 });
             },
-            dropTable: function() {
-                var d = klass.database.execute(sql.drop(klass.table));
+            dropTable: function(force) {
+                var d = klass.execute(sql.drop(klass.table, force));
                 return d.next(klass.afterDropTable);
             },
             afterDropTable: function(res) {
