@@ -253,10 +253,8 @@ test('ModelOther', function(d) {
             data         : 'TEXT',
             timestamp    : 'INTEGER'
         }
-    });
+    }, (new Database('testuserdb2')));
     // Database.debugMessage = true;
-    var db = new Database('testuserdb2');
-    User.__defineGetter__('database', function() { return db; });
     User.proxyColumns({
         timestamp  : 'Date',
         data       : 'JSON'
@@ -291,6 +289,50 @@ test('ModelOther', function(d) {
         });
     }).error(function(e) { console.log(e) });
 }, 6, 1000).
+
+test('Model transaction', function(d) {
+    var User = Model({
+        table: 'users',
+        primaryKeys: ['uid'],
+        fields: {
+            'uid'        : 'INTEGER PRIMARY KEY',
+            name : 'TEXT UNIQUE',
+            num : 'INTEGER'
+        }
+    }, (new Database('testuserdb3')));
+    User.dropTable().next(User.initialize).next(function() {
+        // Database.debugMessage = true;
+        var num = 0;
+        User.transaction(function() {
+            for (var i = 0;  i < 10; i++) {
+                var u = new User({num: i, name: 'name' + i});
+                if (i == 3) {
+                    var u2 = new User({name: 'name' + 2});
+                    u2.save().error(function(e) {
+                        ok(e, 'catch error');
+                    });
+                }
+                u.save().next(function(res) {
+                    num++;
+                }).next(function(res) {
+                    num++;
+                    p(res);
+                });
+            }
+            var u3 = new User({name: 'name' + 3});
+            u3.save().error(function(e) {
+                ok(e, 'catch error');
+            }).next(function() {
+                num++;
+            }) ;
+        }).next(function() {
+            User.count().next(function(c) {
+                equals(num, 21);
+                equals(c, 10);
+            });
+        });
+    });
+}, 12, 1000).
 
 test('finished', function(d) {
     ok(true, 'finished!!!');
