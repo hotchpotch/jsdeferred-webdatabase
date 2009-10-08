@@ -311,7 +311,7 @@ test('Model transaction', function(d) {
             beforeSaveNum++;
         }
         User.transaction(function() {
-            for (var i = 0;  i < 10; i++) {
+            for (var i = 0;  i < 5; i++) {
                 var u = new User({num: i, name: 'name' + i});
                 if (i == 3) {
                     var u2 = new User({name: 'name' + 2});
@@ -321,7 +321,9 @@ test('Model transaction', function(d) {
                 }
                 u.save().next(function(res) {
                     num++;
+                    return res;
                 }).next(function(res) {
+                    ok(res.name, 'transaction save chain ok:' + res.name);
                     num++;
                 });
             }
@@ -337,16 +339,16 @@ test('Model transaction', function(d) {
             }) ;
         }).next(function() {
             User.count().next(function(c) {
-                equals(c, 10);
-                equals(num, 21);
-                equals(afterSaveNum, 10);
-                equals(beforeSaveNum, 12);
+                equals(c, 5);
+                equals(num, 11);
+                equals(afterSaveNum, 5);
+                equals(beforeSaveNum, 7);
                 p(Date.now() - now);
                 d.call();
             });
         });
     });
-}, 7, 1000).
+}, 12, 2000).
 
 test('finished', function(d) {
     ok(true, 'finished!!!');
