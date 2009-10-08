@@ -302,37 +302,51 @@ test('Model transaction', function(d) {
     }, (new Database('testuserdb3')));
     User.dropTable().next(User.initialize).next(function() {
         // Database.debugMessage = true;
-        var num = 0;
+        var num = 0, afterSaveNum = 0, beforeSaveNum = 0;
+        var now = Date.now();
+        User.afterSave = function() {
+            afterSaveNum++;
+        }
+        User.beforeSave = function() {
+            beforeSaveNum++;
+        }
         User.transaction(function() {
             for (var i = 0;  i < 10; i++) {
                 var u = new User({num: i, name: 'name' + i});
                 if (i == 3) {
                     var u2 = new User({name: 'name' + 2});
                     u2.save().error(function(e) {
-                        ok(e, 'catch error');
+                        ok(e, 'catch error2');
                     });
                 }
                 u.save().next(function(res) {
                     num++;
                 }).next(function(res) {
                     num++;
-                    p(res);
                 });
             }
             var u3 = new User({name: 'name' + 3});
-            u3.save().error(function(e) {
-                ok(e, 'catch error');
-            }).next(function() {
+            u3.save().next(function(n) {
+                ok(false, 'don"t call this');
+            }).error(function(e) {
+                ok(e, 'catch error3');
+                return 'okk';
+            }).next(function(r) {
+                equals('okk', r, 'get chainback success');
                 num++;
             }) ;
         }).next(function() {
             User.count().next(function(c) {
-                equals(num, 21);
                 equals(c, 10);
+                equals(num, 21);
+                equals(afterSaveNum, 10);
+                equals(beforeSaveNum, 12);
+                p(Date.now() - now);
+                d.call();
             });
         });
     });
-}, 12, 1000).
+}, 7, 1000).
 
 test('finished', function(d) {
     ok(true, 'finished!!!');

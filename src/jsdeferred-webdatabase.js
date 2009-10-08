@@ -123,21 +123,20 @@
             var self = this;
             var que = this.queue.shift();
             if (que[0] == 'deferred') {
-                if (que[1] == 'next' && lock) {
+                if (lock && okng && (que[1] == 'next' || que[1] == 'error')) {
                     // next は非同期になってしまい Transaction できないため無理矢理...
-                    if (okng == 'ok') {
-                        var res = que[2][0](values);
-                        d = d.next(function() { return res });
+                    if ((que[1] == 'next' && okng == 'ok') || (que[1] == 'error' && okng == 'ng')) {
+                        try {
+                            okng = 'ok';
+                            values = que[2][0](values);
+                            d = d.next(function() { return values });
+                        } catch(e) {
+                            okng = 'ng'
+                            values = e;
+                            d = d.error(function() { return values });
+                        }
                     }
                     self.chains(d, lock, okng, values);
-                    return d;
-                } else if (que[1] == 'error' && lock) {
-                    if (okng == 'ng') {
-                        var res = que[2][0](values);
-                        d = d.next(function() { return res });
-                    }
-                    self.chains(d, lock, okng, values);
-                    return d;
                 } else {
                     d = d[que[1]].apply(d, que[2]);
                     while (this.queue.length && this.queue[0][0] == 'deferred') {
@@ -164,14 +163,12 @@
                     self._lastResult = res;
                     self.chains(d, lock, 'ok', res);
                     if (Database.debugMessage) Database.debug(res, sql, args);
-                    p('next call');
                     d.call(res);
                 }, function(_tx, error) {
                     self.tx = _tx;
                     self._lastError = [error, sql, args];
                     self.chains(d, lock, 'ng', error);
                     if (Database.debugMessage) Database.debug(error, sql, args);
-                    p('next error');
                     d.fail([error, sql, args]);
                 });
                 return d;
