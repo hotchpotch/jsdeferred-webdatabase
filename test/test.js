@@ -143,15 +143,30 @@ test("utils", function(d){
     Util.callBefore(obj, 'getName', function() {
         is('foo', obj.name);
         is(1, i);
+        i++;
         obj.name = 'bar';
     });
     Util.callAfter(obj, 'getName', function() {
         is('bar', obj.name);
-        is(2, i);
+        is(3, i);
+        i++;
+    });
+    is('bar', obj.getName());
+
+    obj.name = 'foo';
+    i = 0;
+    Util.callBefore(obj, 'getName', function() {
+        is('foo', obj.name);
+        is(0, i);
+        i++;
+    });
+    Util.callAfter(obj, 'getName', function() {
+        is('bar', obj.name);
+        is(4, i);
     });
     is('bar', obj.getName());
     d.call();
-}, 6).
+}, 15).
 
 test("transaction", function(d) {
     var db = new Database;
