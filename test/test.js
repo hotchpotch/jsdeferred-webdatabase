@@ -140,13 +140,13 @@ test("utils", function(d){
         name: 'foo'
     };
     is('foo', obj.getName());
-    Util.callBefore(obj, 'getName', function() {
+    Util.beforeTrigger(obj, 'getName', function() {
         is('foo', obj.name);
         is(1, i);
         i++;
         obj.name = 'bar';
     });
-    Util.callAfter(obj, 'getName', function() {
+    Util.afterTrigger(obj, 'getName', function() {
         is('bar', obj.name);
         is(3, i);
         i++;
@@ -155,12 +155,12 @@ test("utils", function(d){
 
     obj.name = 'foo';
     i = 0;
-    Util.callBefore(obj, 'getName', function() {
+    Util.beforeTrigger(obj, 'getName', function() {
         is('foo', obj.name);
         is(0, i);
         i++;
     });
-    Util.callAfter(obj, 'getName', function() {
+    Util.afterTrigger(obj, 'getName', function() {
         is('bar', obj.name);
         is(4, i);
     });

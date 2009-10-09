@@ -64,10 +64,10 @@
                     }
                 }
             },
-            callAfter: function(obj, name, func) {
+            afterTrigger: function(obj, name, func) {
                 return Database.Util._addTrigger(obj, name, func, 'after');
             },
-            callBefore: function(obj, name, func) {
+            beforeTrigger: function(obj, name, func) {
                 return Database.Util._addTrigger(obj, name, func, 'before');
             }
         },
