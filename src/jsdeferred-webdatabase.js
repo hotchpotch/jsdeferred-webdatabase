@@ -59,7 +59,9 @@
                     }
                 } else {
                     obj[name] = function() {
+                        p(1);
                         func.apply(obj, Array.prototype.slice.call(arguments, 1));
+                        p(2);
                         return origFunc.apply(obj, Array.prototype.slice.call(arguments, 1));
                     }
                 }
@@ -459,6 +461,12 @@
         klass._db = db;
 
         extend(klass, {
+            afterTrigger: function(name, func) {
+                return Database.Util.afterTrigger(klass, name, func);
+            },
+            beforeTrigger: function(name, func) {
+                return Database.Util.beforeTrigger(klass, name, func);
+            },
             proxyColumns: function(hash) {
                 for (var key in hash) {
                     if (klass.hasColumn(key)) {
@@ -681,6 +689,21 @@
         });
 
         klass.prototype = {
+            afterTrigger: function(name, func) {
+                var orig = klass.prototype[name];
+                klass.prototype[name] = function() {
+                    var res = orig.apply(this, arguments);
+                    func.apply(this, arguments);
+                    return res;
+                }
+            },
+            beforeTrigger: function(name, func) {
+                var orig = klass.prototype[name];
+                klass.prototype[name] = function() {
+                    func.apply(this, arguments);
+                    return orig.apply(this, arguments);
+                }
+            },
             setByProxy: function(key, value) {
                 if (klass._columnProxy[key]) {
                     value = klass._columnProxy[key].setter(value);
