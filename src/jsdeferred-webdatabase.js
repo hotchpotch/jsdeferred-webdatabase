@@ -53,16 +53,22 @@
                 var origFunc = obj[name];
                 if (type == 'after') {
                     obj[name] = function() {
-                        var res = origFunc.apply(obj, Array.prototype.slice.call(arguments, 1));
-                        func.call(obj, res);
-                        return res;
+                        var res = origFunc.apply(obj, arguments);
+                        if (res instanceof Deferred) {
+                            return res.next(func);
+                        } else {
+                            func.apply(obj, arguments);
+                            return res;
+                        }
                     }
                 } else {
                     obj[name] = function() {
-                        p(1);
-                        func.apply(obj, Array.prototype.slice.call(arguments, 1));
-                        p(2);
-                        return origFunc.apply(obj, Array.prototype.slice.call(arguments, 1));
+                        var res = func.apply(obj, arguments);
+                        if (res instanceof Deferred) {
+                            return res.next(origFunc);
+                        } else {
+                            return origFunc.apply(obj, arguments);
+                        }
                     }
                 }
             },
@@ -693,15 +699,23 @@
                 var orig = klass.prototype[name];
                 klass.prototype[name] = function() {
                     var res = orig.apply(this, arguments);
-                    func.apply(this, arguments);
+                    if (res instanceof Deferred) {
+                        return res.next(func);
+                    } else {
+                        func.apply(this, arguments);
+                    }
                     return res;
                 }
             },
             beforeTrigger: function(name, func) {
                 var orig = klass.prototype[name];
                 klass.prototype[name] = function() {
-                    func.apply(this, arguments);
-                    return orig.apply(this, arguments);
+                    var res = func.apply(this, arguments);
+                    if (res instanceof Deferred) {
+                        return res.next(orig);
+                    } else {
+                        return orig.apply(this, arguments);
+                    }
                 }
             },
             setByProxy: function(key, value) {
