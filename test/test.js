@@ -238,7 +238,7 @@ test("execute", function(d) {
                   ok(e[0], 'get transaction errorback');
                   equals(e[1], eSql);
               });
-        }),
+        }, false),
         db.transaction(function(tx) {
             tx.
               execute('drop table if exists `Test`').
@@ -403,6 +403,7 @@ test('ModelOther', function(d) {
 }, 6, 1000).
 
 test('Model transaction', function(d) {
+    var db = new Database('testuserdb3');
     var User = Model({
         table: 'users',
         primaryKeys: ['uid'],
@@ -411,7 +412,7 @@ test('Model transaction', function(d) {
             name : 'TEXT UNIQUE',
             num : 'INTEGER'
         }
-    }, (new Database('testuserdb3')));
+    }, db);
     User.dropTable().next(User.initialize).next(function() {
         // Database.debugMessage = true;
         var num = 0, afterSaveNum = 0, beforeSaveNum = 0;
@@ -422,7 +423,7 @@ test('Model transaction', function(d) {
         User.beforeSave = function() {
             beforeSaveNum++;
         }
-        User.transaction(function() {
+        db.transaction(function() {
             for (var i = 0;  i < 5; i++) {
                 var u = new User({num: i, name: 'name' + i});
                 if (i == 3) {
