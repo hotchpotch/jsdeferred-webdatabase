@@ -1,0 +1,18 @@
+= jsdeferred-webdatabase
+
+WebDatabase OR/Mapper for ( JSDeffered http://github.com/cho45/jsdeferred ).
+
+== document
+
+- http://subtech.g.hatena.ne.jp/secondlife/20091008/1255003922 (ja)
+
+please show test/test.js
+
+== Author
+
+Yuichi Tateno <hotchpotch@gmail.com>
+
+== Lisence
+
+MIT Lisence
+
