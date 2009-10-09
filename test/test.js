@@ -241,6 +241,77 @@ test("execute", function(d) {
     });
 }, 21, 3000).
 
+test('Model', function(d) {
+    var User = Model({
+        table: 'users',
+        primaryKeys: ['uid'],
+        fields: {
+            'uid'         : 'INTEGER PRIMARY KEY',
+            name         : 'TEXT UNIQUE NOT NULL',
+            data         : 'TEXT',
+            updated_at   : 'INTEGER'
+        }
+    });
+    is(User.columns, ['uid', 'name', 'data', 'updated_at']);
+    // Database.debugMessage = true;
+    var db = new Database('testuserdb');
+    User.__defineGetter__('database', function() { return db; });
+    User.initialize().next(User.dropTable).next(function() {
+        ok(true, 'drop table');
+    }).next(User.createTable).next(function(r) {
+        ok(User.getInfo('name'), 'create table');
+        var u = new User({
+            name: 'nadek'
+        });
+        equals(u.uid, undefined, 'uid');
+        equals(u.name, 'nadek', 'name');
+        User.findFirst().next(function(r) {
+            ok(!r, 'findFirst undefined');
+        }).next(function() { return u.save() }).next(function() {
+            equals(u.uid, 1, 'uid');
+            equals(u.name, 'nadek', 'name');
+            u.name = 'nadeko';
+            u.save().next(function(r) {
+                equals(r.name, 'nadeko', 'update name');
+                equals(r.uid, 1, 'uid');
+                var u2 = new User({
+                    name: 'nadeko'
+                });
+                u2.save().next(function(r) {
+                    ok(false, 'don"t call this');
+                }).error(function(e) {
+                    ok(true, 'name is UNIQUE (ok)');
+                    var u3 = new User({
+                        name: 'yuno'
+                    });
+                    u3.save().next(User.count).next(function(c) {
+                        equals(c, 2, 'count total');
+                        equals(u3.uid, 2, 'uid');
+                        equals(u3.name, 'yuno', 'name');
+                        User.findFirst({order: 'uid asc'}).next(function(fUser) {
+                            equals(fUser.uid, 1);
+                            equals(fUser.name, 'nadeko');
+                            User.find({
+                                where: { name: 'yuno' }
+                            }).next(function(res) {
+                                ok(res.length == 1)
+                                var r = res[0];
+                                ok(r instanceof User);
+                                equals(r.uid, 2);
+                                equals(r.name, 'yuno');
+                                r.remove().next(User.count).next(function(c) {
+                                    equals(c, 1, 'count total');
+                                    d.call();
+                                });
+                            });
+                        });
+                    });
+                });
+            }); // u.save
+        }); // u.save
+    });
+}, 21, 3000).
+
 test('ModelOther', function(d) {
     var User = Model({
         table: 'users',
