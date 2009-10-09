@@ -118,14 +118,40 @@ Deferred.
 test("Database instance", function(d){
     var db = new Database();
     ok(db, 'db');
+    ok(db instanceof Database, 'instanceof');
     var db1 = new Database();
     equals(db.db, db1.db, 'db cache');
     var db2 = new Database('foo');
     ok(db2, 'db2');
+    ok(db2 instanceof Database, 'instanceof');
     ok(db != db2, 'db not eq');
     ok(db.db != db2.db, 'db not eq raw db');
     d.call();
-}, 5).
+}, 7).
+
+test("utils", function(d){
+    var Util = Database.Util;
+    var i = 0;
+    var obj = {
+        getName: function() {
+            i++;
+            return this.name;
+        },
+        name: 'foo'
+    };
+    is('foo', obj.getName());
+    Util.callBefore(obj, 'getName', function() {
+        is('foo', obj.name);
+        is(1, i);
+        obj.name = 'bar';
+    });
+    Util.callAfter(obj, 'getName', function() {
+        is('bar', obj.name);
+        is(2, i);
+    });
+    is('bar', obj.getName());
+    d.call();
+}, 6).
 
 test("transaction", function(d) {
     var db = new Database;

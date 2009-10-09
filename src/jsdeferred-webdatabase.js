@@ -44,6 +44,33 @@
     }
 
     extend(Database, {
+        Util: {
+            _addTrigger: function(obj, name, func, type) {
+                if (!obj && obj[name]) throw new Error('obj or ' + name + ' is not fount.');
+                if (!obj._triggers) obj._triggers = {};
+                if (!obj._triggers[name]) obj._triggers[name] = [];
+                var callers = obj._triggers[name];
+                var origFunc = obj[name];
+                if (type == 'after') {
+                    obj[name] = function() {
+                        var res = origFunc.apply(obj, Array.prototype.slice.call(arguments, 1));
+                        func.call(obj, res);
+                        return res;
+                    }
+                } else {
+                    obj[name] = function() {
+                        func.apply(obj, Array.prototype.slice.call(arguments, 1));
+                        return origFunc.apply(obj, Array.prototype.slice.call(arguments, 1));
+                    }
+                }
+            },
+            callAfter: function(obj, name, func) {
+                return Database.Util._addTrigger(obj, name, func, 'after');
+            },
+            callBefore: function(obj, name, func) {
+                return Database.Util._addTrigger(obj, name, func, 'before');
+            }
+        },
         _instances: {},
         debug: p,
         global: null
