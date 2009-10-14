@@ -586,15 +586,6 @@
             execute: function(sql) {
                 if (sql instanceof Array) {
                     return klass.database.execute(sql[0], sql[1]);
-                    /*
-                    var tx;
-                    if (klass.database._tx) {
-                        tx = klass.database._tx;
-                    } else {
-                        tx = klass.database;
-                    }
-                    return tx.execute(sql[0], sql[1]);
-                    */
                 } else {
                     throw new Error('klass execute required([stmt, bind])' + sql);
                 }
@@ -807,6 +798,17 @@
                     if (klass.afterSave) klass.afterSave(self);
                     return self;
                 });
+            },
+            saveWithTransaction: function() {
+                var self = this;
+                var res = self.save();
+                var d = klass.database.transaction(function() {
+                    self.save().next();
+                });
+                d = d.next(function() {
+                    return self;
+                });
+                return d;
             }
         }
 
