@@ -688,8 +688,8 @@
                 delete klass._infoCache;
                 return res;
             },
-            count: function() {
-                return klass.execute(klass.select('count(*) AS total')).next(function(res) {
+            count: function(where) {
+                return klass.execute(klass.select('count(*) AS total', where)).next(function(res) {
                     if (res.rows && res.rows.length) {
                         var item = res.rows.item(0);
                         return item.total;

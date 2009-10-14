@@ -325,7 +325,7 @@ test('Model', function(d) {
                     var u3 = new User({
                         name: 'yuno'
                     });
-                    u3.save().next(User.count).next(function(c) {
+                    u3.save().next(function() { return User.count() }).next(function(c) {
                         equals(c, 2, 'count total');
                         equals(u3.uid, 2, 'uid');
                         equals(u3.name, 'yuno', 'name');
@@ -340,7 +340,7 @@ test('Model', function(d) {
                                 ok(r instanceof User);
                                 equals(r.uid, 2);
                                 equals(r.name, 'yuno');
-                                r.remove().next(User.count).next(function(c) {
+                                r.remove().next(function() { return User.count(); }).next(function(c) {
                                     equals(c, 1, 'count total');
                                     d.call();
                                 });
@@ -456,12 +456,15 @@ test('Model transaction', function(d) {
                 equals(num, 11);
                 equals(afterSaveNum, 5);
                 equals(beforeSaveNum, 7);
-                p(Date.now() - now);
-                d.call();
+                // p(Date.now() - now);
+                User.count({name: 'name3'}).next(function(c) {
+                    equals(c, 1, 'count with where');
+                    d.call();
+                });
             });
         });
     });
-}, 12, 2000).
+}, 13, 2000).
 
 test('finished', function(d) {
     ok(true, 'finished!!!');
