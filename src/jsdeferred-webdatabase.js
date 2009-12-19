@@ -34,7 +34,7 @@
         this.options = extend({
             version: '1.0',
             displayName: dbName,
-            estimatedSize: 1 * 1024 * 1024
+            estimatedSize: 5 * 1024
         }, options);
 
         this.dbName = dbName;
@@ -110,7 +110,8 @@
         },
         getDatabase: function() {
             var options = this.options;
-            return (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
+            var db = (Database.global || window).openDatabase(this.dbName, options.version, options.displayName, options.estimatedSize);
+            return db;
         },
         execute: function(sql, args) {
             var self = this;
@@ -656,7 +657,7 @@
                 var result = [], rows = res.rows;
                 var len = rows.length;
                 for (var i = 0;  i < len; i++) {
-                    var r = new klass(rows.item(i));
+                    var r = new klass(rows.item(i), true);
                     r._created = true;
                     result.push(r);
                 }
@@ -801,11 +802,19 @@
                     this._created = true;
                 }
             },
-            remove: function() {
+            destroy: function() {
                 if (!this._created) {
                     throw new Error('this row not created');
                 }
-                return klass.execute(sql.deleteSql(klass.table, this.getPrimaryWhere()));
+                var self = this;
+                if (klass.beforeDestoroy) klass.beforeDestoroy(self);
+
+                var d = klass.execute(sql.deleteSql(klass.table, this.getPrimaryWhere()));
+                return d.next(function(res) {
+                    delete self._created;
+                    if (klass.afterDestroy) klass.afterDestroy(self);
+                    return self;
+                });
             },
             save: function() {
                 var d;
