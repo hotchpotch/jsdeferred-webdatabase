@@ -249,7 +249,7 @@
     })();
 
     /*-- include SQLAbstract --*/
-    /* rev: 9a01158cc8454d80869fff950ff6caf760d8b546 */    
+    /* rev: 8eb3cc1c898b02f4c742dc8e40353605df730d3e */    
     (function(Global) {
         var p = function() {
             if (typeof console != 'undefined')
@@ -274,7 +274,7 @@
             isString: function(obj) {
                 return typeof obj === 'string' || obj instanceof String;
             },
-            NOT_NULL: "0x01NOTNULL",
+            NOT_NULL: "\u0003",
             NULL: null
         });
     
@@ -366,11 +366,11 @@
             optionsToSQL: function(options) {
                 var stmt = '', bind = [];
                 if (options) {
-                    if (options.order) {
-                        stmt += ' ORDER BY ' + options.order;
-                    }
                     if (options.group) {
                         stmt += ' GROUP BY ' + options.group;
+                    }
+                    if (options.order) {
+                        stmt += ' ORDER BY ' + options.order;
                     }
                     if (typeof options.limit != 'undefined') {
                         stmt += ' LIMIT ?';
