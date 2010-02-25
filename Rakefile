@@ -1,7 +1,16 @@
 
 require 'rake'
 
+desc "default task"
+task :default => [:update_sql_abstract]
+
+desc "update SQL Abstract"
 task :update_sql_abstract => [] do
+  unless File.exist? 'modules/sql-abstract-javascript/src/sql-abstract.js'
+    puts 'Submodule does not exist. Please do: git submodule update --init'
+    exit 1
+  end
+
   orig = nil 
   open('src/jsdeferred-webdatabase.js', 'r') do |f|
     orig = f.read
