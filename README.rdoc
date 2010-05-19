@@ -10,7 +10,11 @@ please show test/test.js
 
 == Author
 
-Yuichi Tateno <hotchpotch@gmail.com>
+- Yuichi Tateno <hotchpotch@gmail.com>
+
+== Thanks
+
+- Atsushi Takayama
 
 == Lisence
 
