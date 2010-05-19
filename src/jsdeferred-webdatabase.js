@@ -34,7 +34,7 @@
         this.options = extend({
             version: '1.0',
             displayName: dbName,
-            estimatedSize: 5 * 1024
+            estimatedSize: 5 * 1024 * 1024
         }, options);
 
         this.dbName = dbName;
